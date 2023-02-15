@@ -1,0 +1,28 @@
+name: BoxPlugin
+version: '${project.version}'
+main: me.twostinkysocks.boxplugin.BoxPlugin
+api-version: 1.19
+prefix: GAY SEX PLUGIN
+authors: [ 2stinkysocks ]
+description: Custom plugin for word witero box server
+softdepend: [LuckPerms]
+commands:
+  sus:
+    permission: boxplugin.crash
+    usage: /<command>
+    description: crash people because it's funny
+  boxplugin:
+    permission: boxplugin.reload
+    usage: /<command>
+    description: basic commands
+  boxxp:
+    usage: /<command>
+    aliases: bxp
+    description: xp
+permissions:
+  boxplugin.crash:
+    default: false
+  boxplugin.reload:
+    default: false
+  boxplugin.xpcommands:
+    default: false

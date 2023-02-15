@@ -1,0 +1,15 @@
+experience:
+  blocks:
+    oak_log:
+      amount: 2
+    stone:
+      amount: 2
+    diamond_ore:
+      amount: 10
+scoreboard:
+  - "&4&lXanatos"
+  - "&r"
+  - "Level: &a%level%"
+  - "Needed XP: &b%needed-xp%"
+  - "&r"
+  - "&exanatos.xyz"
