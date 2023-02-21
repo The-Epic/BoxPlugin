@@ -9,6 +9,12 @@ import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
+import su.nexmedia.engine.api.config.JYML;
+import su.nightexpress.excellentcrates.key.CrateKey;
+
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class XPManager {
 
@@ -18,9 +24,11 @@ public class XPManager {
                 int beforexp = BoxPlugin.instance.getXpManager().getXP(p);
                 BoxPlugin.instance.getXpManager().addXP(p, 200);
                 int afterxp = BoxPlugin.instance.getXpManager().getXP(p);
+                File commonConfig = new File(BoxPlugin.instance.getExcellentCrates().getDataFolder().getPath(), "/keys/common.yml");
+                BoxPlugin.instance.getKeyManager().giveKey(p, new CrateKey(BoxPlugin.instance.getExcellentCrates(), new JYML(commonConfig)), 1);
                 Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(p, beforexp, afterxp));
             });
-            Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&a&lFREE XP! &7You earned 200 xp!"));
+            Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&a&lFREE REWARDS! &7You earned 200 xp and 1 common crate key!"));
         }, 36000, 36000);
     }
 

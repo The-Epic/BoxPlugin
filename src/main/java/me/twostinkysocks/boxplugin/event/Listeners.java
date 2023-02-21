@@ -1,32 +1,66 @@
 package me.twostinkysocks.boxplugin.event;
 
 import me.twostinkysocks.boxplugin.BoxPlugin;
+import me.twostinkysocks.boxplugin.Util;
+import me.twostinkysocks.boxplugin.manager.PerksManager.Perk;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.types.InheritanceNode;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
+import org.bukkit.*;
+import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryCrafting;
+import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryPlayer;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityInteractEvent;
+import org.bukkit.event.entity.EntityResurrectEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.inventory.*;
+import org.bukkit.event.player.*;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.persistence.PersistentDataType;
 
-import javax.naming.Name;
+import java.util.List;
 
 
 public class Listeners implements Listener {
 
     @EventHandler
+    public void entityInteract(PlayerInteractEntityEvent e) {
+        Entity interacted = e.getRightClicked();
+        Player p = e.getPlayer();
+        if(interacted.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "perk_npc"), PersistentDataType.INTEGER) && interacted.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "perk_npc"), PersistentDataType.INTEGER) == 1) {
+            e.setCancelled(true);
+            BoxPlugin.instance.getPerksManager().openMainGui(p);
+        }
+    }
+
+    @EventHandler
+    public void entityDamage(EntityDamageByEntityEvent e) {
+        if(e.getDamager() instanceof Player) {
+            Player p = (Player) e.getDamager();
+            Entity interacted = e.getEntity();
+            if(interacted.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "perk_npc"), PersistentDataType.INTEGER) && interacted.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "perk_npc"), PersistentDataType.INTEGER) == 1) {
+                e.setCancelled(true);
+                BoxPlugin.instance.getPerksManager().openMainGui(p);
+            }
+        }
+    }
+
+    @EventHandler
     public void onJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
+        for(Perk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(p)) {
+            perk.instance.onEquip(p);
+        }
         if(p.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.DOUBLE)) {
             p.getPersistentDataContainer().remove(new NamespacedKey(BoxPlugin.instance, "xp"));
         }
@@ -53,6 +87,80 @@ public class Listeners implements Listener {
     }
 
     @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        Player player = (Player) event.getWhoClicked();
+        if(player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) return;
+        ItemStack item = event.getCursor();
+        ItemStack itemselected = event.getCurrentItem();
+        ItemStack hotkeyItem = event.getClick() == ClickType.NUMBER_KEY ? event.getWhoClicked().getInventory().getItem(event.getHotbarButton()) : event.getCurrentItem();
+        ItemStack offHandItem = event.getClick() == ClickType.SWAP_OFFHAND ? event.getWhoClicked().getInventory().getItem(45) : event.getCurrentItem();
+//        Bukkit.broadcastMessage("CLICK EVENT:");
+//        Bukkit.broadcastMessage("Slot " + event.getRawSlot());
+//        Bukkit.broadcastMessage("Bottom Size " + player.getInventory().getSize());
+//        Bukkit.broadcastMessage("Top Size " + player.getOpenInventory().getTopInventory().getSize());
+//        Bukkit.broadcastMessage("Cursor item " + (item == null ? null : item.getType()));
+//        Bukkit.broadcastMessage("Current item " + (itemselected == null ? null : itemselected.getType()));
+//        Bukkit.broadcastMessage("Clicked inv " + event.getClickedInventory());
+//        Bukkit.broadcastMessage("Top inv " + player.getOpenInventory().getTopInventory());
+//        Bukkit.broadcastMessage("Action " + event.getAction() + "\n");
+
+
+        // TODO: fix hotkey
+        boolean shouldCancel = false;
+
+        // shift click into another inventory
+        if(event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY && !(player.getOpenInventory().getTopInventory() instanceof CraftInventoryPlayer)) {
+            shouldCancel = true;
+        }
+
+        // hotkey from hotbar into inventory
+        else if((event.getAction() == InventoryAction.HOTBAR_SWAP || event.getAction() == InventoryAction.HOTBAR_MOVE_AND_READD) && !(player.getOpenInventory().getTopInventory() instanceof CraftInventoryCrafting)) {
+            shouldCancel = true;
+        }
+
+        // click item into inventory
+        else if((event.getAction() == InventoryAction.SWAP_WITH_CURSOR || event.getAction() == InventoryAction.PLACE_ALL || event.getAction() == InventoryAction.PLACE_ONE || event.getAction() == InventoryAction.PLACE_SOME) && !(event.getClickedInventory() instanceof CraftInventoryPlayer)) {
+            shouldCancel = true;
+        }
+
+        if(event.getClick() == ClickType.SWAP_OFFHAND && !(player.getOpenInventory().getTopInventory() instanceof CraftInventoryCrafting)) {
+            event.setCancelled(true);
+            player.sendMessage(ChatColor.RED + "You can't swap hands while in an inventory!");
+            player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 0.25f, 0.5f);
+            return;
+        }
+
+
+        if(shouldCancel) {
+            if(Util.isPerkItem(item) || Util.isPerkItem(itemselected) || Util.isPerkItem(hotkeyItem)) {
+                event.setCancelled(true);
+                player.sendMessage(ChatColor.RED + "You can't remove perk items from your inventory!");
+                player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 0.25f, 0.5f);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onDrag(InventoryDragEvent event) {
+        Player player = (Player) event.getWhoClicked();
+        if(player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) return;
+
+        ItemStack dragged = event.getOldCursor(); // This is the item that is being dragged
+
+        if (Util.isPerkItem(dragged)) {
+            int inventorySize = event.getInventory().getSize(); // The size of the inventory, for reference
+
+            // Now we go through all of the slots and check if the slot is inside our inventory (using the inventory size as reference)
+            for (int i : event.getRawSlots()) {
+                if (i < inventorySize) {
+                    event.setCancelled(true);
+                    break;
+                }
+            }
+        }
+    }
+
+    @EventHandler
     public void onBlockBreak(BlockBreakEvent e) {
         Player p = e.getPlayer();
         if(BoxPlugin.instance.blockExperience.containsKey(e.getBlock().getType()) && !BoxPlugin.instance.placedBlocks.contains(e.getBlock().getLocation())) {
@@ -70,6 +178,28 @@ public class Listeners implements Listener {
     }
 
     @EventHandler
+    public void onDropItem(PlayerDropItemEvent e) {
+        Player p = e.getPlayer();
+        ItemStack item = e.getItemDrop().getItemStack();
+        if(Util.isPerkItem(item)) {
+            e.setCancelled(true);
+            p.sendMessage(ChatColor.RED + "You can't drop perk items!");
+            p.playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 0.25f, 0.5f);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerRespawn(PlayerRespawnEvent e) {
+        Player p = e.getPlayer();
+
+        Bukkit.getScheduler().runTaskLater(BoxPlugin.instance, () -> {
+            for(Perk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(p)) {
+                perk.instance.onRespawn(e);
+            }
+        }, 1L);
+    }
+
+    @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
         // more than 10 below - 0xp
         // up to 10 below - 10xp
@@ -77,16 +207,20 @@ public class Listeners implements Listener {
         Player cause = e.getEntity().getKiller();
         Player target = e.getEntity();
 
+        for(Perk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(target)) {
+            perk.instance.onDeath(e);
+        }
 
         if(cause == null) {
             BoxPlugin.instance.getPvpManager().resetStreak(target);
+            BoxPlugin.instance.getScoreboardManager().queueUpdate(target);
             return;
         }
 
         int causelevel = BoxPlugin.instance.getXpManager().getLevel(cause);
         int causexp = BoxPlugin.instance.getXpManager().getXP(cause);
         int targetlevel = BoxPlugin.instance.getXpManager().getLevel(target);
-        BoxPlugin.instance.getPvpManager().registerKill(cause, target);
+        BoxPlugin.instance.getPvpManager().registerKill(cause, target); // resets streak here
         if(targetlevel >= 100 && causelevel >= 100) {
             BoxPlugin.instance.getXpManager().addXP(cause, 100);
             Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 100));
@@ -112,6 +246,15 @@ public class Listeners implements Listener {
             p.sendTitle(ChatColor.AQUA + "" + ChatColor.BOLD + "LEVEL UP!", ChatColor.GRAY + "" + beforelevel + " → " + afterlevel, 10, 40, 10);
             p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1f);
         }
+
+        // remove second perk TODO: test
+        if(afterlevel < 50 && beforelevel >= 50) {
+            List<Perk> selected = BoxPlugin.instance.getPerksManager().getSelectedPerks(p);
+            if(selected.size() >= 1) {
+                BoxPlugin.instance.getPerksManager().setSelectedPerks(p, List.of(selected.get(0)));
+            }
+        }
+
         p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.1f, 2f);
         if(e.getAfterXP() < 0) {
             p.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER, Math.abs(e.getAfterXP()));

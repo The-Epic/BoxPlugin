@@ -39,7 +39,19 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <dependencyReducedPomLocation>${project.build.directory}/dependency-reduced-pom.xml</dependencyReducedPomLocation>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.github.stefvanschie.inventoryframework</pattern>
+                                    <shadedPattern>me.twostinkysocks.inventoryframework</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>su.nightexpress:excellentcrates</exclude>
+                                    <exclude>su.nexmedia:engine</exclude>
+                                </excludes>
+                            </artifactSet>
                         </configuration>
                     </execution>
                 </executions>
@@ -71,7 +83,7 @@
     <dependencies>
         <dependency>
             <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
+            <artifactId>spigot</artifactId>
             <version>1.19.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
@@ -86,6 +98,21 @@
             <artifactId>api</artifactId>
             <version>5.4</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.stefvanschie.inventoryframework</groupId>
+            <artifactId>IF</artifactId>
+            <version>0.10.8</version>
+        </dependency>
+        <dependency>
+            <groupId>su.nightexpress</groupId>
+            <artifactId>excellentcrates</artifactId>
+            <version>4.1.6</version>
+        </dependency>
+        <dependency>
+            <groupId>su.nexmedia</groupId>
+            <artifactId>engine</artifactId>
+            <version>2.2.8</version>
         </dependency>
     </dependencies>
 </project>

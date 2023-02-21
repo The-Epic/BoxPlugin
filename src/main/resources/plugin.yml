@@ -2,9 +2,10 @@ name: BoxPlugin
 version: '${project.version}'
 main: me.twostinkysocks.boxplugin.BoxPlugin
 api-version: 1.19
-prefix: GAY SEX PLUGIN
+prefix: BoxPlugin
 authors: [ 2stinkysocks ]
 description: Custom plugin for word witero box server
+depend: [ExcellentCrates]
 softdepend: [LuckPerms]
 commands:
   sus:
@@ -19,10 +20,26 @@ commands:
     usage: /<command>
     aliases: bxp
     description: xp
+  openperkgui:
+    usage: /<command>
+  getselectedperks:
+    usage: /<command>
+  getownedperks:
+    usage: /<command>
+  boxgivecommonkey:
+    usage: /<command>
+    permission: boxplugin.givekey
+  resetperks:
+    usage: /<command>
+    permission: boxplugin.resetperks
 permissions:
   boxplugin.crash:
     default: false
   boxplugin.reload:
     default: false
   boxplugin.xpcommands:
+    default: false
+  boxplugin.givekey:
+    default: false
+  boxplugin.resetperks:
     default: false
