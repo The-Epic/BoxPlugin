@@ -1,37 +1,52 @@
 package me.twostinkysocks.boxplugin.event;
 
 import me.twostinkysocks.boxplugin.BoxPlugin;
-import me.twostinkysocks.boxplugin.Util;
+import me.twostinkysocks.boxplugin.util.Util;
 import me.twostinkysocks.boxplugin.manager.PerksManager.Perk;
-import net.luckperms.api.model.user.User;
-import net.luckperms.api.node.types.InheritanceNode;
 import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryPlayer;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityInteractEvent;
-import org.bukkit.event.entity.EntityResurrectEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.SlimeSplitEvent;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 
 
 public class Listeners implements Listener {
+
+    @EventHandler
+    public void entityDeath(EntityDeathEvent e) {
+        if(!(e.getEntity() instanceof Player) && e.getEntity().getKiller() != null) {
+            if(BoxPlugin.instance.entityExperience.containsKey(e.getEntityType()) && !e.getEntity().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER)) {
+                int before = BoxPlugin.instance.getXpManager().getXP(e.getEntity().getKiller());
+                BoxPlugin.instance.getXpManager().addXP(e.getEntity().getKiller(), BoxPlugin.instance.entityExperience.get(e.getEntityType()));
+                int after = BoxPlugin.instance.getXpManager().getXP(e.getEntity().getKiller());
+                Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(e.getEntity().getKiller(), before, after));
+            }
+        }
+        if(e.getEntity().getKiller() != null &&e.getEntity().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER)) {
+            int before = BoxPlugin.instance.getXpManager().getXP(e.getEntity().getKiller());
+            BoxPlugin.instance.getXpManager().addXP(e.getEntity().getKiller(), e.getEntity().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER));
+            int after = BoxPlugin.instance.getXpManager().getXP(e.getEntity().getKiller());
+            Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(e.getEntity().getKiller(), before, after));
+        }
+    }
 
     @EventHandler
     public void entityInteract(PlayerInteractEntityEvent e) {
@@ -67,11 +82,18 @@ public class Listeners implements Listener {
         if(!p.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER)) {
             p.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER, 0);
         }
+//        BoxPlugin.instance.getLeaderboardManager().updateLeaderboard(p);
         BoxPlugin.instance.getScoreboardManager().updatePlayerScoreboard(p);
     }
 
     @EventHandler
     public void onLeave(PlayerQuitEvent e) {
+        BoxPlugin.instance.getOfflineXPFile().set(e.getPlayer().getUniqueId().toString(), BoxPlugin.instance.getXpManager().getXP(e.getPlayer()));
+        try {
+            BoxPlugin.instance.getOfflineXPFile().save(new File(BoxPlugin.instance.getDataFolder(), "offlinexp.yml"));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
         BoxPlugin.instance.getScoreboardManager().getQueuedUpdates().remove(e.getPlayer());
     }
 
@@ -160,21 +182,23 @@ public class Listeners implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onBlockBreak(BlockBreakEvent e) {
         Player p = e.getPlayer();
-        if(BoxPlugin.instance.blockExperience.containsKey(e.getBlock().getType()) && !BoxPlugin.instance.placedBlocks.contains(e.getBlock().getLocation())) {
-            int newxp = BoxPlugin.instance.blockExperience.get(e.getBlock().getType());
-            int existingxp = p.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER);
-            p.getPersistentDataContainer()
-                    .set(
-                            new NamespacedKey(BoxPlugin.instance, "xp"),
-                            PersistentDataType.INTEGER,
-                            existingxp + newxp
-                            );
-            Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(p, existingxp, existingxp + newxp));
+        if(!e.isCancelled()) {
+            if(BoxPlugin.instance.blockExperience.containsKey(e.getBlock().getType()) && !BoxPlugin.instance.placedBlocks.contains(e.getBlock().getLocation())) {
+                int newxp = BoxPlugin.instance.blockExperience.get(e.getBlock().getType());
+                int existingxp = p.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER);
+                p.getPersistentDataContainer()
+                        .set(
+                                new NamespacedKey(BoxPlugin.instance, "xp"),
+                                PersistentDataType.INTEGER,
+                                existingxp + newxp
+                        );
+                Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(p, existingxp, existingxp + newxp));
+            }
+            BoxPlugin.instance.placedBlocks.remove(e.getBlock().getLocation());
         }
-        BoxPlugin.instance.placedBlocks.remove(e.getBlock().getLocation());
     }
 
     @EventHandler
@@ -196,6 +220,7 @@ public class Listeners implements Listener {
             for(Perk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(p)) {
                 perk.instance.onRespawn(e);
             }
+            if(BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(p) != null) BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(p).instance.onRespawn(e);
         }, 1L);
     }
 
@@ -210,6 +235,7 @@ public class Listeners implements Listener {
         for(Perk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(target)) {
             perk.instance.onDeath(e);
         }
+        if(BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(target) != null) BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(target).instance.onDeath(e);
 
         if(cause == null) {
             BoxPlugin.instance.getPvpManager().resetStreak(target);
@@ -222,13 +248,31 @@ public class Listeners implements Listener {
         int targetlevel = BoxPlugin.instance.getXpManager().getLevel(target);
         BoxPlugin.instance.getPvpManager().registerKill(cause, target); // resets streak here
         if(targetlevel >= 100 && causelevel >= 100) {
-            BoxPlugin.instance.getXpManager().addXP(cause, 100);
+            HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
+            toDrop.forEach((i, item) -> {
+                Item droppedItem = (Item) cause.getWorld().spawnEntity(cause.getLocation(), EntityType.DROPPED_ITEM);
+                droppedItem.setItemStack(item);
+            });
+            cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
+            BoxPlugin.instance.getXpManager().addXP(cause, 5000);
             Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 100));
         } else if(targetlevel >= causelevel) {
-            BoxPlugin.instance.getXpManager().addXP(cause, 100);
+            HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
+            toDrop.forEach((i, item) -> {
+                Item droppedItem = (Item) cause.getWorld().spawnEntity(cause.getLocation(), EntityType.DROPPED_ITEM);
+                droppedItem.setItemStack(item);
+            });
+            cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
+            BoxPlugin.instance.getXpManager().addXP(cause, 1000);
             Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 100));
         } else if(targetlevel - causelevel >= -10) {
-            BoxPlugin.instance.getXpManager().addXP(cause, 10);
+            HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
+            toDrop.forEach((i, item) -> {
+                Item droppedItem = (Item) cause.getWorld().spawnEntity(cause.getLocation(), EntityType.DROPPED_ITEM);
+                droppedItem.setItemStack(item);
+            });
+            cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
+            BoxPlugin.instance.getXpManager().addXP(cause, 200);
             Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 10));
         } // else nothing
         BoxPlugin.instance.getScoreboardManager().queueUpdate(cause);
@@ -260,6 +304,15 @@ public class Listeners implements Listener {
             p.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER, Math.abs(e.getAfterXP()));
         }
         BoxPlugin.instance.getScoreboardManager().queueUpdate(p);
+    }
+
+    @EventHandler
+    public void onSplit(SlimeSplitEvent e) {
+        if(e.getEntity() instanceof MagmaCube) {
+            if(e.getEntity().getSize() == 2) {
+                e.setCancelled(true);
+            }
+        }
     }
 
 }

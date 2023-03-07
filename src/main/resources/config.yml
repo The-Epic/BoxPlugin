@@ -1,3 +1,4 @@
+xp-equation-constant: 40
 experience:
   blocks:
     oak_log:
@@ -6,6 +7,11 @@ experience:
       amount: 2
     diamond_ore:
       amount: 10
+  entities:
+    magma_cube:
+      amount: 40
+    zombie:
+      amount: 30
 scoreboard:
   - "&4&lXanatos"
   - "&r"

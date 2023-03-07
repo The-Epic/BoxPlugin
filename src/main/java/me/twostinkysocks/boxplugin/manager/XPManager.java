@@ -22,13 +22,13 @@ public class XPManager {
         Bukkit.getScheduler().runTaskTimer(BoxPlugin.instance, () -> {
             Bukkit.getOnlinePlayers().forEach(p -> {
                 int beforexp = BoxPlugin.instance.getXpManager().getXP(p);
-                BoxPlugin.instance.getXpManager().addXP(p, 200);
+                BoxPlugin.instance.getXpManager().addXP(p, BoxPlugin.instance.getConfig().getInt("xp-equation-constant") * 10);
                 int afterxp = BoxPlugin.instance.getXpManager().getXP(p);
                 File commonConfig = new File(BoxPlugin.instance.getExcellentCrates().getDataFolder().getPath(), "/keys/common.yml");
                 BoxPlugin.instance.getKeyManager().giveKey(p, new CrateKey(BoxPlugin.instance.getExcellentCrates(), new JYML(commonConfig)), 1);
                 Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(p, beforexp, afterxp));
             });
-            Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&a&lFREE REWARDS! &7You earned 200 xp and 1 common crate key!"));
+            Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&a&lFREE REWARDS! &7You earned " + BoxPlugin.instance.getConfig().getInt("xp-equation-constant") * 10 + " xp and 1 common crate key!"));
         }, 36000, 36000);
     }
 
@@ -50,11 +50,11 @@ public class XPManager {
     }
 
     public int convertXPToLevel(int xp) {
-        return (int) (Math.sqrt(Math.abs(((double)xp)/20))+1);
+        return (int) (Math.sqrt(Math.abs(((double)xp)/BoxPlugin.instance.getConfig().getInt("xp-equation-constant")))+1);
     }
 
     public int convertLevelToXP(int level) {
-        return (int) (20 * Math.pow(level - 1, 2));
+        return (int) (BoxPlugin.instance.getConfig().getInt("xp-equation-constant") * Math.pow(level - 1, 2));
     }
 
     public int getNeededXp(Player p) {

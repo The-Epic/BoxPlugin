@@ -29,7 +29,7 @@ public class PerkRockets extends AbstractPerk {
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS);
         meta.setLore(List.of(
                 "",
-                ChatColor.GRAY + "Gain 8 rockets on respawn"
+                ChatColor.GRAY + "Gain 32 rockets on respawn"
         ));
         guiItem.setItemMeta(meta);
 
@@ -50,7 +50,7 @@ public class PerkRockets extends AbstractPerk {
     @Override
     public void onDeath(PlayerDeathEvent e) {
         for(ItemStack item : e.getDrops()) {
-            if(item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) && item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) == 1) {
+            if(item.getType() == Material.FIREWORK_ROCKET && item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) && item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) == 1) {
                 e.getDrops().remove(item);
             }
         }
@@ -69,14 +69,14 @@ public class PerkRockets extends AbstractPerk {
 
     private void removeOldRocketsFromInventory(Player p) {
         for(ItemStack item : p.getInventory().getContents()) {
-            if(item != null && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) && item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) == 1) {
+            if(item != null && item.getType() == Material.FIREWORK_ROCKET && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) && item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) == 1) {
                 p.getInventory().remove(item);
             }
         }
     }
 
     private void addRocketsToInventory(Player p) {
-        ItemStack stack = new ItemStack(Material.FIREWORK_ROCKET, 8);
+        ItemStack stack = new ItemStack(Material.FIREWORK_ROCKET, 32);
         FireworkMeta meta = (FireworkMeta) stack.getItemMeta();
         meta.setPower(3);
         meta.setLore(List.of(

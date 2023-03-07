@@ -6,7 +6,7 @@ prefix: BoxPlugin
 authors: [ 2stinkysocks ]
 description: Custom plugin for word witero box server
 depend: [ExcellentCrates]
-softdepend: [LuckPerms]
+softdepend: [LuckPerms, HolographicDisplays, PlaceholderAPI]
 commands:
   sus:
     permission: boxplugin.crash
@@ -32,6 +32,14 @@ commands:
   resetperks:
     usage: /<command>
     permission: boxplugin.resetperks
+  resetplacedblocks:
+    usage: /<command>
+    permission: boxplugin.resetplacedblocks
+  terrainregenerator:
+    aliases: "tr"
+    description: Various settings/commands for terrainregenerator
+    usage: /<command>
+    permission: terrainregenerator.reload
 permissions:
   boxplugin.crash:
     default: false
@@ -42,4 +50,9 @@ permissions:
   boxplugin.givekey:
     default: false
   boxplugin.resetperks:
+    default: false
+  boxplugin.resetplacedblocks:
+    default: false
+  terrainregenerator.reload:
+    description: reload plugin
     default: false
