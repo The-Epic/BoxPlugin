@@ -8,6 +8,13 @@ import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
 import com.github.stefvanschie.inventoryframework.pane.OutlinePane;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.StateFlag;
+import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
+import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
+import me.twostinkysocks.boxplugin.compressor.Compressor;
+import me.twostinkysocks.boxplugin.customitems.CustomItemsMain;
 import me.twostinkysocks.boxplugin.event.Listeners;
 import me.twostinkysocks.boxplugin.event.PlayerBoxXpUpdateEvent;
 import me.twostinkysocks.boxplugin.manager.*;
@@ -63,8 +70,12 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
 
     private ExcellentCrates excellentCrates;
 
+    private Compressor compressor;
+
 
     private YamlConfiguration offlineXPFile;
+
+//    private StateFlag entityInteract;
 
     public void load() {
         blockExperience = new HashMap<>();
@@ -112,6 +123,7 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
         pvpManager = new PVPManager();
         xpManager = new XPManager();
         perksManager = new PerksManager();
+        compressor = new Compressor();
 
         excellentCrates = (ExcellentCrates) getServer().getPluginManager().getPlugin("ExcellentCrates");
         keyManager = excellentCrates.getKeyManager();
@@ -127,13 +139,34 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
         getCommand("boxxp").setTabCompleter(this);
         getCommand("boxplugin").setTabCompleter(this);
         getCommand("resetplacedblocks").setExecutor(this);
+        getCommand("key").setExecutor(this);
+        getCommand("key").setTabCompleter(this);
+        getCommand("compress").setExecutor(this);
+        getCommand("clearstreak").setExecutor(this);
+        getCommand("clearstreak").setTabCompleter(this);
         getServer().getPluginManager().registerEvents(new Listeners(), this);
         load();
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlaceholderAPIExpansion().register();
         }
         new TerrainRegeneratorMain().onEnable();
+        new CustomItemsMain().onEnable();
     }
+//
+//    @Override
+//    public void onLoad() {
+//        FlagRegistry fr = WorldGuard.getInstance().getFlagRegistry();
+//        try{
+//            StateFlag flag = new StateFlag("entityInteract", true);
+//            fr.register(flag);
+//            entityInteract = flag;
+//        } catch(FlagConflictException e) {
+//            Flag<?> existing = fr.get("entityInteract");
+//            if(existing instanceof StateFlag) {
+//                entityInteract = (StateFlag) existing;
+//            }
+//        }
+//    }
 
     public ScoreboardManager getScoreboardManager() {
         return scoreboardManager;
@@ -160,6 +193,14 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
     public YamlConfiguration getOfflineXPFile() {
         return offlineXPFile;
     }
+
+    public Compressor getCompressor() {
+        return compressor;
+    }
+
+//    public StateFlag getEntityInteractFlag() {
+//        return entityInteract;
+//    }
 
 
     @Override
@@ -278,7 +319,7 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                         int xp = Integer.parseInt(args[2]);
                         int existingxp = getXpManager().getXP(target);
                         getXpManager().setXP(target, xp);
-                        Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(target, existingxp, xp));
+                        Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(target, existingxp, xp, true));
                         p.sendMessage(ChatColor.GREEN + "Set " + target.getName() + "'s xp to " + xp);
                     } catch(NumberFormatException e) {
                         p.sendMessage(ChatColor.RED + "Usage: /boxxp <get|set|add> [player] [amount]");
@@ -293,7 +334,7 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                         int xp = Integer.parseInt(args[2]);
                         int existingxp = getXpManager().getXP(target);
                         getXpManager().setXP(target, existingxp+xp);
-                        Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(target, existingxp, existingxp+xp));
+                        Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(target, existingxp, existingxp+xp, true));
                         p.sendMessage(ChatColor.GREEN + "Added " + xp + " xp to " + target.getName());
                     } catch(NumberFormatException e) {
                         p.sendMessage(ChatColor.RED + "Usage: /boxxp <get|set|add> [player] [amount]");
@@ -345,6 +386,66 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                 }
                 placedBlocks = new ArrayList<>();
                 p.sendMessage(ChatColor.GREEN + "Reset placed blocks!");
+            } else if(label.equals("key")) {
+                if(args.length == 0) {
+                    p.sendMessage(ChatColor.RED + "Usage: /key <tier>");
+                    return true;
+                }
+                if(args[0].equals("common")) {
+                    if(!p.hasPermission("boxplugin.key.common")) {
+                        p.sendMessage(ChatColor.RED + "You don't have permission to get that key type!");
+                        return true;
+                    }
+                    File commonConfig = new File(BoxPlugin.instance.getExcellentCrates().getDataFolder().getPath(), "/keys/common.yml");
+                    BoxPlugin.instance.getKeyManager().giveKey(p, new CrateKey(BoxPlugin.instance.getExcellentCrates(), new JYML(commonConfig)), 1);
+                    p.sendMessage(ChatColor.GREEN + "Gave 1x Common Key!");
+                } else if(args[0].equals("rare")) {
+                    if(!p.hasPermission("boxplugin.key.rare")) {
+                        p.sendMessage(ChatColor.RED + "You don't have permission to get that key type!");
+                        return true;
+                    }
+                    File rareConfig = new File(BoxPlugin.instance.getExcellentCrates().getDataFolder().getPath(), "/keys/rare.yml");
+                    BoxPlugin.instance.getKeyManager().giveKey(p, new CrateKey(BoxPlugin.instance.getExcellentCrates(), new JYML(rareConfig)), 1);
+                    p.sendMessage(ChatColor.GREEN + "Gave 1x Rare Key!");
+                } else if(args[0].equals("epic")) {
+                    if(!p.hasPermission("boxplugin.key.epic")) {
+                        p.sendMessage(ChatColor.RED + "You don't have permission to get that key type!");
+                        return true;
+                    }
+                    File epicConfig = new File(BoxPlugin.instance.getExcellentCrates().getDataFolder().getPath(), "/keys/epic.yml");
+                    BoxPlugin.instance.getKeyManager().giveKey(p, new CrateKey(BoxPlugin.instance.getExcellentCrates(), new JYML(epicConfig)), 1);
+                    p.sendMessage(ChatColor.GREEN + "Gave 1x Epic Key!");
+                } else if(args[0].equals("legendary")) {
+                    if(!p.hasPermission("boxplugin.key.legendary")) {
+                        p.sendMessage(ChatColor.RED + "You don't have permission to get that key type!");
+                        return true;
+                    }
+                    File legendaryConfig = new File(BoxPlugin.instance.getExcellentCrates().getDataFolder().getPath(), "/keys/legendary_crate.yml");
+                    BoxPlugin.instance.getKeyManager().giveKey(p, new CrateKey(BoxPlugin.instance.getExcellentCrates(), new JYML(legendaryConfig)), 1);
+                    p.sendMessage(ChatColor.GREEN + "Gave 1x Legendary Key!");
+                } else {
+                    p.sendMessage(ChatColor.RED + "Usage: /key <tier>");
+                    return true;
+                }
+            } else if(label.equals("compress")) {
+                if(!p.hasPermission("boxplugin.compress")) {
+                    p.sendMessage(ChatColor.RED + "You don't have permission!");
+                    return true;
+                }
+                getCompressor().compressAll(p);
+                p.sendMessage(ChatColor.AQUA + "Compressed your inventory!");
+                p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_USE, 1f, 2f);
+            } else if(label.equals("clearstreak")) {
+                if(!p.hasPermission("boxplugin.clearstreak")) {
+                    p.sendMessage(ChatColor.RED + "You don't have permission!");
+                    return true;
+                }
+                if(args.length == 0 || Bukkit.getPlayer(args[0]) == null) {
+                    p.sendMessage(ChatColor.RED + "Usage: /clearstreak <player>");
+                    return true;
+                }
+                BoxPlugin.instance.getPvpManager().resetStreak(Bukkit.getPlayer(args[0]));
+                p.sendMessage(ChatColor.GREEN + "Cleared streak!");
             }
         }
 
@@ -371,6 +472,24 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
         } else if(alias.equals("resetperks")) {
             if(args.length == 1) {
                 StringUtil.copyPartialMatches(args[0], Bukkit.getOnlinePlayers().stream().map(p -> p.getName()).collect(Collectors.toList()), completions);
+                return completions;
+            }
+        } else if(alias.equals("key")) {
+            if(args.length == 1) {
+                ArrayList<String> keys = new ArrayList<>();
+                if(sender.hasPermission("boxplugin.key.common")) {
+                    keys.add("common");
+                }
+                if(sender.hasPermission("boxplugin.key.rare")) {
+                    keys.add("rare");
+                }
+                if(sender.hasPermission("boxplugin.key.epic")) {
+                    keys.add("epic");
+                }
+                if(sender.hasPermission("boxplugin.key.legendary")) {
+                    keys.add("legendary");
+                }
+                StringUtil.copyPartialMatches(args[0], keys, completions);
                 return completions;
             }
         }

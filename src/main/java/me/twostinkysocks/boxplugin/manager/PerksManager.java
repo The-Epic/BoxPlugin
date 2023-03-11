@@ -20,6 +20,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -35,6 +37,10 @@ public class PerksManager {
     // perk_speed, etc, are all integers, 0 or 1
 
     // selected_perks is a string of all perk keys, separated by \n
+
+    // xp is current xp
+
+    // xp_boost_level is current xp boost level (1,2,3,4,5,etc.)
 
     public enum Perk {
         SPEED(new PerkSpeed()),
@@ -219,8 +225,8 @@ public class PerksManager {
         assert perkOne != null;
         assert perkTwo != null;
 
-        pane.addItem(perkOne, 3,2);
-        pane.addItem(perkTwo, 5,2);
+        pane.addItem(perkOne, 3,1);
+        pane.addItem(perkTwo, 5,1);
 
         GuiItem megaperk = null;
 
@@ -260,11 +266,65 @@ public class PerksManager {
             }
         }
 
-        pane.addItem(megaperk, 4, 4);
+        // xp upgrade
+        ItemStack xpUpgradeStack = new ItemStack(Material.EXPERIENCE_BOTTLE);
+        ItemMeta xpMeta = xpUpgradeStack.getItemMeta();
+        xpMeta.setDisplayName(ChatColor.GREEN + "Permanent XP Boost");
+        BigDecimal bd = new BigDecimal((calculateXPMultiplier(p)+0.1));
+        bd = bd.round(new MathContext(4));
+        double upgradedValue = bd.doubleValue();
+        xpMeta.setLore(List.of(
+                "",
+                ChatColor.AQUA + "Current boost: " + (calculateXPMultiplier(p)) + "x",
+                "",
+                ChatColor.GRAY + "Upgrade to " + ChatColor.AQUA + "" + upgradedValue + "x " + ChatColor.GRAY + "for " + ChatColor.GOLD + ChatColor.BOLD + calculateXPGigaCoinCost(p) + "" + " Giga Coins"
+        ));
+        xpUpgradeStack.setItemMeta(xpMeta);
+        GuiItem xpUpgradeItem = new GuiItem(xpUpgradeStack, this::clickXPUpgrade);
+        //
+
+
+
+        pane.addItem(megaperk, 3, 3);
+
+        pane.addItem(xpUpgradeItem, 5, 3);
 
         gui.addPane(pane);
 
         gui.copy().show(p);
+    }
+
+    public int getXpBoostLevel(Player p) {
+        return p.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "xp_boost_level"), PersistentDataType.INTEGER) ? p.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "xp_boost_level"), PersistentDataType.INTEGER) : 0;
+    }
+
+    public void setXpBoostLevel(Player p, int level) {
+        p.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "xp_boost_level"), PersistentDataType.INTEGER, level);
+    }
+
+    public double calculateXPMultiplier(Player p) {
+        return 1.0 + (0.1*getXpBoostLevel(p));
+    }
+
+    public int calculateXPGigaCoinCost(Player p) {
+        return (int) Math.pow(2, getXpBoostLevel(p));
+    }
+
+    public void clickXPUpgrade(InventoryClickEvent e) {
+        e.setCancelled(true);
+        Player p = (Player) e.getWhoClicked();
+        boolean canBuy = buyPermaXP(p);
+        if(canBuy) {
+            setXpBoostLevel(p, getXpBoostLevel(p) + 1);
+            p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, 2f);
+            p.sendMessage(ChatColor.GREEN + "Upgraded XP boost!");
+            p.closeInventory();
+            openMainGui(p);
+        } else {
+            p.playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 0.25f, 0.5f);
+            p.sendMessage(ChatColor.RED + "You can't afford this!");
+            return;
+        }
     }
 
     public void resetPerks(Player p) {
@@ -284,6 +344,7 @@ public class PerksManager {
                 p.getPersistentDataContainer().remove(new NamespacedKey(BoxPlugin.instance, perk.instance.getKey()));
             }
         }
+        setXpBoostLevel(p, 0);
     }
 
     public void openMegaPerkBuyGui(Player p) {
@@ -489,6 +550,32 @@ public class PerksManager {
         openMegaPerkBuyGui(p);
     }
 
+    public boolean buyPermaXP(Player p) {
+        int gigaCoinsHeld = 0;
+        int cost = calculateXPGigaCoinCost(p);
+        for(ItemStack item : p.getInventory().getContents()) {
+            if(Util.isGigaCoin(item)) {
+                gigaCoinsHeld += item.getAmount();
+            }
+        }
+        if(gigaCoinsHeld >= cost) {
+            for(ItemStack item : p.getInventory().getContents()) {
+                if(cost == 0) return true;
+                if(Util.isGigaCoin(item)) {
+                    int amount = item.getAmount();
+                    for(int i = 0; i < amount; i++) {
+                        cost--;
+                        item.setAmount(item.getAmount() - 1);
+                        if(cost == 0) return true;
+                    }
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /**
      * Check if a perk can be bought, and buy it if possible
      * @param perk The perk being purchased
@@ -507,7 +594,8 @@ public class PerksManager {
             for(ItemStack item : p.getInventory().getContents()) {
                 if(cost == 0) return true;
                 if(Util.isGigaCoin(item)) {
-                    for(int i = 0; i < item.getAmount(); i++) {
+                    int amount = item.getAmount();
+                    for(int i = 0; i < amount; i++) {
                         cost--;
                         item.setAmount(item.getAmount() - 1);
                         if(cost == 0) return true;
@@ -532,7 +620,8 @@ public class PerksManager {
             for(ItemStack item : p.getInventory().getContents()) {
                 if(cost == 0) return true;
                 if(Util.isGhastlyHerb(item)) {
-                    for(int i = 0; i < item.getAmount(); i++) {
+                    int amount = item.getAmount();
+                    for(int i = 0; i < amount; i++) {
                         cost--;
                         item.setAmount(item.getAmount() - 1);
                         if(cost == 0) return true;

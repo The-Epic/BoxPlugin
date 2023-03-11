@@ -40,6 +40,19 @@ commands:
     description: Various settings/commands for terrainregenerator
     usage: /<command>
     permission: terrainregenerator.reload
+  key:
+    description: key commands for ranks
+    usage: /<command>
+  compress:
+    description: compress stuff
+    usage: /<command>
+  clearstreak:
+    description: clear a streak
+    usage: /<command>
+  cgive:
+    permission: customitems.give
+    description: Give a custom item to yourself or another player
+    usage: /<command>
 permissions:
   boxplugin.crash:
     default: false
@@ -55,4 +68,34 @@ permissions:
     default: false
   terrainregenerator.reload:
     description: reload plugin
+    default: false
+  boxplugin.key.common:
+    description: give self common key
+    default: false
+  boxplugin.key.rare:
+    description: give self rare key
+    default: false
+  boxplugin.key.epic:
+    description: give self epic key
+    default: false
+  boxplugin.key.legendary:
+    description: give self legendary key
+    default: false
+  boxplugin.compress:
+    description: compress items
+    default: false
+  boxplugin.clearstreak:
+    description: clear streaks
+    default: false
+  customitems.give:
+    description: base permission
+    default: false
+  customitems.give.self:
+    description: Give custom items to yourself
+    default: false
+  customitems.give.others:
+    description: Give custom items to other players
+    default: false
+  customitems.cooldownbypass:
+    description: bypass all cooldowns
     default: false

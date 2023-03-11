@@ -1,5 +1,14 @@
 package me.twostinkysocks.boxplugin.event;
 
+import com.sk89q.worldedit.bukkit.BukkitWorld;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.flags.StateFlag;
+import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
+import com.sk89q.worldguard.protection.regions.RegionQuery;
 import me.twostinkysocks.boxplugin.BoxPlugin;
 import me.twostinkysocks.boxplugin.util.Util;
 import me.twostinkysocks.boxplugin.manager.PerksManager.Perk;
@@ -40,7 +49,7 @@ public class Listeners implements Listener {
                 Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(e.getEntity().getKiller(), before, after));
             }
         }
-        if(e.getEntity().getKiller() != null &&e.getEntity().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER)) {
+        if(!(e.getEntity() instanceof Player) && e.getEntity().getKiller() != null &&e.getEntity().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER)) {
             int before = BoxPlugin.instance.getXpManager().getXP(e.getEntity().getKiller());
             BoxPlugin.instance.getXpManager().addXP(e.getEntity().getKiller(), e.getEntity().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER));
             int after = BoxPlugin.instance.getXpManager().getXP(e.getEntity().getKiller());
@@ -49,9 +58,28 @@ public class Listeners implements Listener {
     }
 
     @EventHandler
+    public void onCommandPreprocess(PlayerCommandPreprocessEvent e) {
+        if(e.getMessage().startsWith("/spawn")) {
+            if(BoxPlugin.instance.getPvpManager().getStreak(e.getPlayer()) >= 20) {
+                e.setCancelled(true);
+                e.getPlayer().sendMessage(ChatColor.RED + "You can't /spawn with a high streak!");
+            }
+        }
+    }
+
+    @EventHandler
     public void entityInteract(PlayerInteractEntityEvent e) {
         Entity interacted = e.getRightClicked();
         Player p = e.getPlayer();
+
+//        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+//        RegionQuery query = container.createQuery();
+//        ApplicableRegionSet set = WorldGuard.getInstance().getPlatform().getRegionContainer().get(new BukkitWorld(interacted.getLocation().getWorld())).getApplicableRegions(BlockVector3.at(interacted.getLocation().getX(),interacted.getLocation().getY(),interacted.getLocation().getZ()));
+//        if(!set.testState(WorldGuardPlugin.inst().wrapPlayer(p), BoxPlugin.instance.getEntityInteractFlag())) {
+//            e.setCancelled(true);
+//            p.sendMessage(ChatColor.RED + "You don't meet the level requirement to access this!");
+//        }
+
         if(interacted.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "perk_npc"), PersistentDataType.INTEGER) && interacted.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "perk_npc"), PersistentDataType.INTEGER) == 1) {
             e.setCancelled(true);
             BoxPlugin.instance.getPerksManager().openMainGui(p);
@@ -67,6 +95,12 @@ public class Listeners implements Listener {
                 e.setCancelled(true);
                 BoxPlugin.instance.getPerksManager().openMainGui(p);
             }
+        }
+        if(e.getDamager() instanceof WitherSkull && !(e.getEntity() instanceof HumanEntity) && !(e.getEntity() instanceof Mob)) {
+            e.setCancelled(true);
+        }
+        if((e.getDamager() instanceof WitherSkull || e.getDamager() instanceof Boat) && (e.getEntity() instanceof ItemFrame)) {
+            e.setCancelled(true);
         }
     }
 
@@ -282,8 +316,15 @@ public class Listeners implements Listener {
     @EventHandler
     public void onUpdateXp(PlayerBoxXpUpdateEvent e) {
         Player p = e.getPlayer();
+        double multiplier = BoxPlugin.instance.getPerksManager().calculateXPMultiplier(p);
         int beforelevel = BoxPlugin.instance.getXpManager().convertXPToLevel(e.getBeforeXP());
+        int difference = e.getAfterXP() - e.getBeforeXP();
+        if(difference > 0 && !e.isMultiplierBypassed()) { // xp gain
+            int toAdd = (int) (difference * multiplier) - difference;
+            BoxPlugin.instance.getXpManager().addXP(p, toAdd);
+        }
         int afterlevel = BoxPlugin.instance.getXpManager().convertXPToLevel(e.getAfterXP());
+
         BoxPlugin.instance.getXpManager().handleGroupUpdate(p, beforelevel, afterlevel);
         if(beforelevel < afterlevel) {
             p.resetTitle();
@@ -291,7 +332,7 @@ public class Listeners implements Listener {
             p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1f);
         }
 
-        // remove second perk TODO: test
+        // remove second perk
         if(afterlevel < 50 && beforelevel >= 50) {
             List<Perk> selected = BoxPlugin.instance.getPerksManager().getSelectedPerks(p);
             if(selected.size() >= 1) {

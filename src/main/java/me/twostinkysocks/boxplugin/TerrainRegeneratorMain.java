@@ -3,6 +3,7 @@ package me.twostinkysocks.boxplugin;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
+import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
@@ -217,7 +218,7 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
                 if(this.config.getString("schematics." + filename + ".command") != null) {
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), this.config.getString("schematics." + filename + ".command"));
                 }
-            } catch (IOException e) {
+            } catch (IOException | WorldEditException e) {
                 e.printStackTrace();
             }
         } else {

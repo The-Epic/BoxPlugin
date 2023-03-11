@@ -30,42 +30,41 @@ public class PVPManager {
         } else {
             streaks.put(cause.getUniqueId(), 1);
         }
-        if(getStreak(cause) % 10 == 0) {
-            if(getStreak(cause) == 20) {
+            if(getStreak(cause) >= 20) {
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, Integer.MAX_VALUE, 0, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, 0, true, false));
             }
-            if(getStreak(cause) == 40) {
+            if(getStreak(cause) >= 40) {
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, Integer.MAX_VALUE, 0, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, 0, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Integer.MAX_VALUE, 0, true, false));
             }
-            if(getStreak(cause) == 60) {
+            if(getStreak(cause) >= 60) {
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, Integer.MAX_VALUE, 0, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, 1, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Integer.MAX_VALUE, 0, true, false));
             }
-            if(getStreak(cause) == 80) {
+            if(getStreak(cause) >= 80) {
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, Integer.MAX_VALUE, 0, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, 1, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Integer.MAX_VALUE, 1, true, false));
             }
-            if(getStreak(cause) == 100) {
+            if(getStreak(cause) >= 100) {
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, Integer.MAX_VALUE, 0, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, 2, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Integer.MAX_VALUE, 1, true, false));
             }
-            if(getStreak(cause) == 120) {
+            if(getStreak(cause) >= 120) {
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, Integer.MAX_VALUE, 0, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, 2, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Integer.MAX_VALUE, 2, true, false));
             }
-            if(getStreak(cause) == 140) {
+            if(getStreak(cause) >= 140) {
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, Integer.MAX_VALUE, 0, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, 2, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Integer.MAX_VALUE, 3, true, false));
             }
-            if(getStreak(cause) == 160) {
+            if(getStreak(cause) >= 160) {
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, Integer.MAX_VALUE, 0, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, 2, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Integer.MAX_VALUE, 4, true, false));
@@ -74,14 +73,7 @@ public class PVPManager {
             for(Player player : Bukkit.getOnlinePlayers()) {
                 player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.2f, 2f);
             }
-        }
         // claim and reset streak
-        HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, getBounty(target)));
-        toDrop.forEach((i, item) -> {
-            Item droppedItem = (Item) cause.getWorld().spawnEntity(cause.getLocation(), EntityType.DROPPED_ITEM);
-            droppedItem.setItemStack(item);
-        });
-        cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + getBounty(target) + " skulls from " + target.getName()));
         resetStreak(target);
     }
 
