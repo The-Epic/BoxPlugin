@@ -32,6 +32,7 @@ public class WitherSkullSword extends CustomItem {
                 //
                 WitherSkull skull = (WitherSkull) p.getWorld().spawnEntity(p.getLocation().add(0, 1, 0), EntityType.WITHER_SKULL);
                 skull.setCharged(true);
+                skull.setShooter(p);
                 skull.setDirection(p.getLocation().getDirection());
                 skull.setVelocity(p.getLocation().getDirection().normalize().multiply(3));
                 //

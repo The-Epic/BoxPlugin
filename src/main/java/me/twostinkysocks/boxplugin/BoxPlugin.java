@@ -7,17 +7,14 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
 import com.github.stefvanschie.inventoryframework.pane.OutlinePane;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.sk89q.worldguard.WorldGuard;
-import com.sk89q.worldguard.protection.flags.Flag;
-import com.sk89q.worldguard.protection.flags.StateFlag;
-import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
-import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
 import me.twostinkysocks.boxplugin.compressor.Compressor;
 import me.twostinkysocks.boxplugin.customitems.CustomItemsMain;
 import me.twostinkysocks.boxplugin.event.Listeners;
 import me.twostinkysocks.boxplugin.event.PlayerBoxXpUpdateEvent;
-import me.twostinkysocks.boxplugin.manager.*;
+import me.twostinkysocks.boxplugin.manager.PVPManager;
+import me.twostinkysocks.boxplugin.manager.PerksManager;
+import me.twostinkysocks.boxplugin.manager.ScoreboardManager;
+import me.twostinkysocks.boxplugin.manager.XPManager;
 import me.twostinkysocks.boxplugin.util.PlaceholderAPIExpansion;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
@@ -28,11 +25,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
 import su.nexmedia.engine.api.config.JYML;
@@ -198,6 +193,10 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
         return compressor;
     }
 
+    public ProtocolManager getProtocolManager() {
+        return protocolManager;
+    }
+
 //    public StateFlag getEntityInteractFlag() {
 //        return entityInteract;
 //    }
@@ -350,7 +349,7 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
             } else if(label.equals("getownedperks")) {
                 p.sendMessage(String.join("\n", getPerksManager().getPurchasedPerks(p).stream().map(pe -> pe.instance.getKey()).collect(Collectors.toList())));
             } else if(label.equals("getselectedperks")) {
-                p.sendMessage(String.join("\n", getPerksManager().getSelectedPerks(p).stream().map(pe -> pe.instance.getKey()).collect(Collectors.toList())));
+                p.sendMessage(String.join("\n", getPerksManager().getSelectedPerks(p).stream().map(pe -> pe.getKey()).collect(Collectors.toList())));
             } else if(label.equals("boxgivecommonkey")) {
                 if(!p.hasPermission("boxplugin.givekey")) {
                     p.sendMessage(ChatColor.RED + "You don't have permission!");

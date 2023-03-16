@@ -1,5 +1,6 @@
-package me.twostinkysocks.boxplugin.perks;
+package me.twostinkysocks.boxplugin.perks.impl;
 
+import me.twostinkysocks.boxplugin.perks.AbstractSelectablePerk;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -15,30 +16,30 @@ import org.bukkit.potion.PotionType;
 
 import java.util.List;
 
-public class MegaPerkStrength extends AbstractPerk {
-    public MegaPerkStrength() {
+public class PerkStrength extends AbstractSelectablePerk {
+    public PerkStrength() {
         ItemStack guiItem = new ItemStack(Material.POTION);
         PotionMeta meta = (PotionMeta) guiItem.getItemMeta();
         meta.setBasePotionData(new PotionData(PotionType.STRENGTH));
-        meta.setDisplayName(ChatColor.RED + "Mega Strength");
+        meta.setDisplayName(ChatColor.RED + "Strength");
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS);
         meta.setLore(List.of(
                 "",
-                ChatColor.GRAY + "Gain permanent Strength VI"
+                ChatColor.GRAY + "Gain permanent Strength I"
         ));
         guiItem.setItemMeta(meta);
 
         setGuiItem(guiItem);
 
-        setCost(1);
+        setCost(2);
 
-        setKey("mega_perk_strength");
+        setKey("perk_strength");
     }
 
     @Override
     public void onRespawn(PlayerRespawnEvent e) {
         Player p = e.getPlayer();
-        p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, 5, true, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, 0, true, false));
     }
 
     @Override
@@ -48,7 +49,7 @@ public class MegaPerkStrength extends AbstractPerk {
 
     @Override
     public void onEquip(Player p) {
-        p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, 5, true, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, 0, true, false));
     }
 
     @Override

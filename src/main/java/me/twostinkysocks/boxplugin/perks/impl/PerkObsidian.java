@@ -1,6 +1,7 @@
-package me.twostinkysocks.boxplugin.perks;
+package me.twostinkysocks.boxplugin.perks.impl;
 
 import me.twostinkysocks.boxplugin.BoxPlugin;
+import me.twostinkysocks.boxplugin.perks.AbstractSelectablePerk;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -15,7 +16,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
 
-public class PerkObsidian extends AbstractPerk {
+public class PerkObsidian extends AbstractSelectablePerk {
     public PerkObsidian() {
         ItemStack guiItem = new ItemStack(Material.OBSIDIAN);
         ItemMeta meta = guiItem.getItemMeta();

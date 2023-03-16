@@ -1,15 +1,9 @@
 package me.twostinkysocks.boxplugin.event;
 
-import com.sk89q.worldedit.bukkit.BukkitWorld;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldguard.WorldGuard;
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-import com.sk89q.worldguard.protection.ApplicableRegionSet;
-import com.sk89q.worldguard.protection.flags.StateFlag;
-import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
-import com.sk89q.worldguard.protection.regions.RegionContainer;
-import com.sk89q.worldguard.protection.regions.RegionQuery;
 import me.twostinkysocks.boxplugin.BoxPlugin;
+import me.twostinkysocks.boxplugin.perks.AbstractSelectablePerk;
+import me.twostinkysocks.boxplugin.perks.AbstractUpgradablePerk;
+import me.twostinkysocks.boxplugin.perks.impl.PerkXPBoost;
 import me.twostinkysocks.boxplugin.util.Util;
 import me.twostinkysocks.boxplugin.manager.PerksManager.Perk;
 import org.bukkit.*;
@@ -107,8 +101,11 @@ public class Listeners implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
-        for(Perk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(p)) {
-            perk.instance.onEquip(p);
+        for(AbstractSelectablePerk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(p)) {
+            perk.onEquip(p);
+        }
+        for(AbstractUpgradablePerk perk : BoxPlugin.instance.getPerksManager().getUpgradablePerks()) {
+            perk.onEquip(p);
         }
         if(p.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.DOUBLE)) {
             p.getPersistentDataContainer().remove(new NamespacedKey(BoxPlugin.instance, "xp"));
@@ -251,10 +248,13 @@ public class Listeners implements Listener {
         Player p = e.getPlayer();
 
         Bukkit.getScheduler().runTaskLater(BoxPlugin.instance, () -> {
-            for(Perk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(p)) {
-                perk.instance.onRespawn(e);
+            for(AbstractSelectablePerk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(p)) {
+                perk.onRespawn(e);
             }
-            if(BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(p) != null) BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(p).instance.onRespawn(e);
+            for(AbstractUpgradablePerk perk : BoxPlugin.instance.getPerksManager().getUpgradablePerks()) {
+                perk.onRespawn(e);
+            }
+            if(BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(p) != null) BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(p).onRespawn(e);
         }, 1L);
     }
 
@@ -266,10 +266,13 @@ public class Listeners implements Listener {
         Player cause = e.getEntity().getKiller();
         Player target = e.getEntity();
 
-        for(Perk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(target)) {
-            perk.instance.onDeath(e);
+        for(AbstractSelectablePerk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(target)) {
+            perk.onDeath(e);
         }
-        if(BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(target) != null) BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(target).instance.onDeath(e);
+        for(AbstractUpgradablePerk perk : BoxPlugin.instance.getPerksManager().getUpgradablePerks()) {
+            perk.onDeath(e);
+        }
+        if(BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(target) != null) BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(target).onDeath(e);
 
         if(cause == null) {
             BoxPlugin.instance.getPvpManager().resetStreak(target);
@@ -316,7 +319,7 @@ public class Listeners implements Listener {
     @EventHandler
     public void onUpdateXp(PlayerBoxXpUpdateEvent e) {
         Player p = e.getPlayer();
-        double multiplier = BoxPlugin.instance.getPerksManager().calculateXPMultiplier(p);
+        double multiplier = ((PerkXPBoost) Perk.XPBOOST.instance).calculateXPMultiplier(p);
         int beforelevel = BoxPlugin.instance.getXpManager().convertXPToLevel(e.getBeforeXP());
         int difference = e.getAfterXP() - e.getBeforeXP();
         if(difference > 0 && !e.isMultiplierBypassed()) { // xp gain
@@ -334,7 +337,7 @@ public class Listeners implements Listener {
 
         // remove second perk
         if(afterlevel < 50 && beforelevel >= 50) {
-            List<Perk> selected = BoxPlugin.instance.getPerksManager().getSelectedPerks(p);
+            List<AbstractSelectablePerk> selected = BoxPlugin.instance.getPerksManager().getSelectedPerks(p);
             if(selected.size() >= 1) {
                 BoxPlugin.instance.getPerksManager().setSelectedPerks(p, List.of(selected.get(0)));
             }

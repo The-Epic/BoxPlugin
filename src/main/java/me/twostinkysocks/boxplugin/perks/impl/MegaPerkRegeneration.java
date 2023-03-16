@@ -1,5 +1,6 @@
-package me.twostinkysocks.boxplugin.perks;
+package me.twostinkysocks.boxplugin.perks.impl;
 
+import me.twostinkysocks.boxplugin.perks.AbstractSelectablePerk;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -16,16 +17,16 @@ import org.bukkit.potion.PotionType;
 
 import java.util.List;
 
-public class MegaPerkResistance extends AbstractPerk {
-    public MegaPerkResistance() {
+public class MegaPerkRegeneration extends AbstractSelectablePerk {
+    public MegaPerkRegeneration() {
         ItemStack guiItem = new ItemStack(Material.POTION);
         PotionMeta meta = (PotionMeta) guiItem.getItemMeta();
-        meta.setBasePotionData(new PotionData(PotionType.INVISIBILITY));
-        meta.setDisplayName(ChatColor.GRAY + "Mega Resistance");
+        meta.setBasePotionData(new PotionData(PotionType.REGEN));
+        meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Mega Regeneration");
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS);
         meta.setLore(List.of(
                 "",
-                ChatColor.GRAY + "Gain permanent Resistance II"
+                ChatColor.GRAY + "Gain permanent Regeneration I"
         ));
         guiItem.setItemMeta(meta);
 
@@ -33,13 +34,13 @@ public class MegaPerkResistance extends AbstractPerk {
 
         setCost(1);
 
-        setKey("mega_perk_resistance");
+        setKey("mega_perk_regeneration");
     }
 
     @Override
     public void onRespawn(PlayerRespawnEvent e) {
         Player p = e.getPlayer();
-        p.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, Integer.MAX_VALUE, 1, true, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 0, true, false));
     }
 
     @Override
@@ -49,11 +50,11 @@ public class MegaPerkResistance extends AbstractPerk {
 
     @Override
     public void onEquip(Player p) {
-        p.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, Integer.MAX_VALUE, 1, true, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 0, true, false));
     }
 
     @Override
     public void onUnequip(Player p) {
-        p.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
+        p.removePotionEffect(PotionEffectType.REGENERATION);
     }
 }
