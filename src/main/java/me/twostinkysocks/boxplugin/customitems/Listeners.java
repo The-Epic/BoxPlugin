@@ -9,7 +9,12 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityTargetEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryInteractEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -33,14 +38,14 @@ public class Listeners implements Listener {
                 if(e.getAction() == Action.RIGHT_CLICK_BLOCK || e.getAction() == Action.RIGHT_CLICK_AIR) {
                     for(CustomItem i : items) {
                         if(itemId.equals(i.getItemId())) {
-                            i.getRightClick().accept(e.getPlayer());
+                            i.getClick().accept(e, e.getAction());
                         }
                     }
                 } else if(e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK) {
                     if(e.getPlayer().getInventory().getItemInMainHand().getType() != Material.AIR) {
                         for(CustomItem i : items) {
                             if(itemId.equals(i.getItemId())) {
-                                i.getLeftClick().accept(e.getPlayer());
+                                i.getClick().accept(e, e.getAction());
                             }
                         }
                     }
@@ -64,6 +69,20 @@ public class Listeners implements Listener {
                     }
                 }
             }
+        }
+    }
+
+    @EventHandler
+    public void onLeave(PlayerQuitEvent e) {
+        for(CustomItem i : items) {
+            i.getLeave().accept(e.getPlayer());
+        }
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent e) {
+        for(CustomItem i : items) {
+            i.getJoin().accept(e.getPlayer());
         }
     }
 }

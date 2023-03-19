@@ -69,9 +69,11 @@ public class PVPManager {
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, 2, true, false));
                 cause.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Integer.MAX_VALUE, 4, true, false));
             }
-            Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&',"&c&lBounty! &7" + cause.getName() + " is on a " + getStreak(cause) + " kill streak!"));
-            for(Player player : Bukkit.getOnlinePlayers()) {
-                player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.2f, 2f);
+            if(getStreak(cause) % 10 == 0) {
+                Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&',"&c&lBounty! &7" + cause.getName() + " is on a " + getStreak(cause) + " kill streak!"));
+                for(Player player : Bukkit.getOnlinePlayers()) {
+                    player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.2f, 2f);
+                }
             }
         // claim and reset streak
         resetStreak(target);

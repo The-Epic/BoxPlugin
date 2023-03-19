@@ -5,12 +5,18 @@ import me.twostinkysocks.boxplugin.customitems.CustomItemsMain;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityTargetEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryInteractEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public abstract class CustomItem {
@@ -21,7 +27,9 @@ public abstract class CustomItem {
     private ItemStack item;
     private CustomItemsMain plugin;
     private String itemId;
-    private Consumer<Player> rc, lc;
+    private Consumer<Player> leave;
+    private Consumer<Player> join;
+    private BiConsumer<PlayerInteractEvent, Action> click;
     private Consumer<EntityTargetEvent> entityTarget;
 
     public CustomItem(String name, String itemId, Material material, CustomItemsMain plugin, String...lore) {
@@ -30,8 +38,9 @@ public abstract class CustomItem {
         this.material = material;
         this.plugin = plugin;
         this.itemId = itemId;
-        this.rc = p -> {};
-        this.lc = p -> {};
+        this.click = (e, a) -> {};
+        this.leave = p -> {};
+        this.join = p -> {};
         this.entityTarget = e -> {};
 
         this.item = new ItemStack(material);
@@ -54,28 +63,36 @@ public abstract class CustomItem {
         return itemId;
     }
 
-    public void setRightClick(Consumer<Player> toRun) {
-        this.rc = toRun;
-    }
-
-    public void setLeftClick(Consumer<Player> toRun) {
-        this.lc = toRun;
+    public void setClick(BiConsumer<PlayerInteractEvent, Action> toRun) {
+        this.click = toRun;
     }
 
     public void setEntityTarget(Consumer<EntityTargetEvent> toRun) {
         this.entityTarget = toRun;
     }
 
-    public Consumer<Player> getRightClick() {
-        return rc;
+    public void setLeave(Consumer<Player> toRun) {
+        this.leave = toRun;
     }
 
-    public Consumer<Player> getLeftClick() {
-        return lc;
+    public void setJoin(Consumer<Player> toRun) {
+        this.join = toRun;
+    }
+
+    public BiConsumer<PlayerInteractEvent, Action> getClick() {
+        return click;
     }
 
     public Consumer<EntityTargetEvent> getEntityTarget() {
         return entityTarget;
+    }
+
+    public Consumer<Player> getLeave() {
+        return leave;
+    }
+
+    public Consumer<Player> getJoin() {
+        return join;
     }
 
     public String getName() {

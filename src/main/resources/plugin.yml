@@ -53,6 +53,14 @@ commands:
     permission: customitems.give
     description: Give a custom item to yourself or another player
     usage: /<command>
+  tree:
+    permission: boxplugin.tree
+    description: Place a tree
+    usage: /<command>
+  setcustomitemid:
+    permission: customitems.give
+    description: set id
+    usage: /<command>
 permissions:
   boxplugin.crash:
     default: false
@@ -98,4 +106,7 @@ permissions:
     default: false
   customitems.cooldownbypass:
     description: bypass all cooldowns
+    default: false
+  boxplugin.tree:
+    description: tree
     default: false

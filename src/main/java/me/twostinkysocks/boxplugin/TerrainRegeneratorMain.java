@@ -33,7 +33,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.SlimeSplitEvent;
+import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -46,6 +48,7 @@ import javax.swing.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,12 +58,15 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
 
     private ArrayList<BukkitTask> tasks;
 
+    private ArrayList<Entity> toDeAgro;
+
     private HashMap<String, ArrayList<UUID>> spawnedEntities;
 
     private YamlConfiguration config;
 
     public void onEnable() {
         tasks = new ArrayList<>();
+        toDeAgro = new ArrayList<>();
         spawnedEntities = new HashMap<String, ArrayList<UUID>>();
         BoxPlugin.instance.getCommand("terrainregenerator").setExecutor(this);
         BoxPlugin.instance.getCommand("terrainregenerator").setTabCompleter(this);
@@ -248,6 +254,25 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
             }
         }
         return true;
+    }
+
+    @EventHandler
+    public void onUnloadChunk(ChunkUnloadEvent e) {
+        for(Entity entity : e.getChunk().getEntities()) {
+            if(entity.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "respawningmob"), PersistentDataType.INTEGER)) {
+                e.getChunk().addPluginChunkTicket(BoxPlugin.instance);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onEntityTarget(EntityTargetEvent e) {
+        for(Entity entity : toDeAgro) {
+            if(entity.getUniqueId().equals(e.getEntity().getUniqueId())) {
+                e.setTarget(null);
+                toDeAgro.remove(entity);
+            }
+        }
     }
 
     @Nullable

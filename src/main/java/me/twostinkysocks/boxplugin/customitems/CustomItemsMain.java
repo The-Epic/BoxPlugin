@@ -3,22 +3,30 @@ package me.twostinkysocks.boxplugin.customitems;
 
 import me.twostinkysocks.boxplugin.BoxPlugin;
 import me.twostinkysocks.boxplugin.customitems.items.CustomItem;
-import me.twostinkysocks.boxplugin.customitems.items.impl.SexShovel;
-import me.twostinkysocks.boxplugin.customitems.items.impl.SuperSexShovel;
-import me.twostinkysocks.boxplugin.customitems.items.impl.WarpSword;
-import me.twostinkysocks.boxplugin.customitems.items.impl.WitherSkullSword;
+import me.twostinkysocks.boxplugin.customitems.items.impl.*;
+import net.minecraft.world.item.ItemCrossbow;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,19 +38,20 @@ public class CustomItemsMain implements CommandExecutor, TabCompleter {
         items = new ArrayList<>();
         BoxPlugin.instance.getCommand("cgive").setExecutor(this);
         BoxPlugin.instance.getCommand("cgive").setTabCompleter(this);
+        BoxPlugin.instance.getCommand("setcustomitemid").setExecutor(this);
+        BoxPlugin.instance.getCommand("setcustomitemid").setTabCompleter(this);
         BoxPlugin.instance.getServer().getPluginManager().registerEvents(new Listeners(items), BoxPlugin.instance);
 
-        registerItem(new WarpSword(this));
         registerItem(new SexShovel(this));
         registerItem(new SuperSexShovel(this));
         registerItem(new WitherSkullSword(this));
+        registerItem(new SpaceHelmet(this));
         BoxPlugin.instance.getLogger().info("Loaded custom items!");
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if(sender instanceof Player) {
-            Player p = (Player) sender;
+        CommandSender p = sender;
             if(command.getName().equals("cgive")) {
                 if(!p.hasPermission("customitems.give")) {
                     p.sendMessage(ChatColor.RED + "You don't have permission to do that!");
@@ -56,15 +65,48 @@ public class CustomItemsMain implements CommandExecutor, TabCompleter {
                 for(CustomItem i : items) {
                     if(args[0].equals(i.getItemId())) {
                         foundItem = true;
-                        p.getInventory().addItem(i.getItemStack());
-                        p.sendMessage(ChatColor.GREEN + "Gave 1x " + i.getItemId());
+                        if(args.length == 1) {
+                            if(p instanceof Player) {
+                                ((Player) p).getInventory().addItem(i.getItemStack());
+                                p.sendMessage(ChatColor.GREEN + "Gave 1x " + i.getItemId());
+                            }
+                        } else {
+                            if(Bukkit.getPlayer(args[1]) == null) {
+                                p.sendMessage(ChatColor.RED + "Invalid player!");
+                                return true;
+                            }
+                            Player togive = Bukkit.getPlayer(args[1]);
+                            HashMap<Integer, ItemStack> toDrop = togive.getInventory().addItem(i.getItemStack());
+                            toDrop.forEach((index, item) -> {
+                                Item entity = (Item) togive.getWorld().spawnEntity(togive.getLocation(), EntityType.DROPPED_ITEM);
+                                entity.setItemStack(i.getItemStack());
+                            });
+                            p.sendMessage(ChatColor.GREEN + "Gave " + togive.getName() + " 1x " + i.getItemId());
+                        }
                     }
                 }
                 if(!foundItem) {
                     p.sendMessage(ChatColor.RED + "That item doesn't exist!");
                 }
+            } else if(command.getName().equals("setcustomitemid")) {
+                if(!p.hasPermission("customitems.give") || !(p instanceof Player)) {
+                    p.sendMessage(ChatColor.RED + "You don't have permission to do that!");
+                    return true;
+                }
+                if(args.length == 0) {
+                    p.sendMessage(ChatColor.RED + "Usage: /setcustomitemid <id>");
+                    return true;
+                }
+                Player player = (Player) p;
+                if(player.getInventory().getItemInMainHand().getType() != Material.AIR) {
+                    ItemStack item = player.getInventory().getItemInMainHand();
+                    ItemMeta meta = item.getItemMeta();
+                    meta.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "ITEM_ID"), PersistentDataType.STRING, args[0]);
+                    item.setItemMeta(meta);
+                    player.getInventory().setItemInMainHand(item);
+                    p.sendMessage(ChatColor.GREEN + "ID set!");
+                }
             }
-        }
         return true;
     }
 
@@ -72,6 +114,13 @@ public class CustomItemsMain implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
         if(sender instanceof Player) {
             if(cmd.getName().equals("cgive")) {
+                if(args.length == 1) {
+                    StringUtil.copyPartialMatches(args[0], items.stream().map(i -> i.getItemId()).collect(Collectors.toList()), completions);
+                    return completions;
+                } else if(args.length == 2) {
+                    StringUtil.copyPartialMatches(args[1], Bukkit.getOnlinePlayers().stream().map(p -> p.getName()).collect(Collectors.toList()), completions);
+                }
+            } else if(cmd.getName().equals("setcustomitemid")) {
                 if(args.length == 1) {
                     StringUtil.copyPartialMatches(args[0], items.stream().map(i -> i.getItemId()).collect(Collectors.toList()), completions);
                     return completions;

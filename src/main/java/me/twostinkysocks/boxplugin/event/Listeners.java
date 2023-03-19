@@ -20,6 +20,8 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.SlimeSplitEvent;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
+import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
@@ -93,7 +95,18 @@ public class Listeners implements Listener {
         if(e.getDamager() instanceof WitherSkull && !(e.getEntity() instanceof HumanEntity) && !(e.getEntity() instanceof Mob)) {
             e.setCancelled(true);
         }
-        if((e.getDamager() instanceof WitherSkull || e.getDamager() instanceof Boat) && (e.getEntity() instanceof ItemFrame)) {
+    }
+
+    @EventHandler
+    public void hangingDamage(HangingBreakByEntityEvent e) {
+        if((e.getRemover() instanceof WitherSkull || e.getRemover() instanceof Boat)) {
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void hangingDamage(HangingBreakEvent e) {
+        if(e.getCause() == HangingBreakEvent.RemoveCause.EXPLOSION) {
             e.setCancelled(true);
         }
     }
@@ -356,6 +369,13 @@ public class Listeners implements Listener {
             if(e.getEntity().getSize() == 2) {
                 e.setCancelled(true);
             }
+        }
+    }
+
+    @EventHandler
+    public void onPortal(PlayerPortalEvent e) {
+        if(e.getCause() == PlayerTeleportEvent.TeleportCause.END_GATEWAY) {
+            e.setCancelled(true);
         }
     }
 

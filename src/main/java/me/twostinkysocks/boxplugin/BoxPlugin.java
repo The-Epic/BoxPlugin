@@ -10,6 +10,7 @@ import com.github.stefvanschie.inventoryframework.pane.OutlinePane;
 import me.twostinkysocks.boxplugin.compressor.Compressor;
 import me.twostinkysocks.boxplugin.customitems.CustomItemsMain;
 import me.twostinkysocks.boxplugin.event.Listeners;
+import me.twostinkysocks.boxplugin.event.PacketListeners;
 import me.twostinkysocks.boxplugin.event.PlayerBoxXpUpdateEvent;
 import me.twostinkysocks.boxplugin.manager.PVPManager;
 import me.twostinkysocks.boxplugin.manager.PerksManager;
@@ -139,11 +140,13 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
         getCommand("compress").setExecutor(this);
         getCommand("clearstreak").setExecutor(this);
         getCommand("clearstreak").setTabCompleter(this);
+        getCommand("tree").setExecutor(this);
         getServer().getPluginManager().registerEvents(new Listeners(), this);
         load();
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlaceholderAPIExpansion().register();
         }
+        new PacketListeners();
         new TerrainRegeneratorMain().onEnable();
         new CustomItemsMain().onEnable();
     }
@@ -445,6 +448,17 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                 }
                 BoxPlugin.instance.getPvpManager().resetStreak(Bukkit.getPlayer(args[0]));
                 p.sendMessage(ChatColor.GREEN + "Cleared streak!");
+            } else if(label.equals("tree")) {
+                if(!p.hasPermission("boxplugin.tree")) {
+                    p.sendMessage(ChatColor.RED + "You don't have permission!");
+                    return true;
+                }
+                int x = p.getLocation().getBlockX();
+                int y = p.getLocation().getBlockY() + 1;
+                int z = p.getLocation().getBlockZ();
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "place feature oak " + x + " " + y + " " + z);
+                p.getWorld().getBlockAt(x, y-1, z).setType(Material.OAK_LOG);
+                p.sendMessage(ChatColor.GREEN + "Placed tree!");
             }
         }
 
