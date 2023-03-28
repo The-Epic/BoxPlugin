@@ -82,7 +82,7 @@ public class SpaceHelmet extends CustomItem {
                         tasks.get(p.getUniqueId()).cancel();
                         tasks.remove(p.getUniqueId());
                     }
-                }, 10L, 10L));
+                }, 5L, 5L));
                 if(old != null) old.cancel();
             }
             if(a == Action.RIGHT_CLICK_BLOCK) {
@@ -112,7 +112,7 @@ public class SpaceHelmet extends CustomItem {
                         tasks.get(p.getUniqueId()).cancel();
                         tasks.remove(p.getUniqueId());
                     }
-                }, 10L, 10L));
+                }, 5L, 5L));
                 if(old != null) old.cancel();
             }
         });

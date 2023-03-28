@@ -7,18 +7,24 @@ import org.bukkit.inventory.ItemStack;
 
 public abstract class AbstractPerk {
 
-    protected ItemStack guiItem;
+    private ItemStack guiItem;
 
-    protected String key;
+    private int cost;
+
+    private String key;
 
     public AbstractPerk() {
         this.guiItem = null;
+        this.cost = 0;
         this.key = null;
     }
 
-    // player argument can be used by overrides
     public ItemStack getGuiItem(Player p) {
         return guiItem;
+    }
+
+    public int getCost() {
+        return cost;
     }
 
     public String getKey() {
@@ -29,19 +35,19 @@ public abstract class AbstractPerk {
         this.guiItem = guiItem;
     }
 
+    public void setCost(int cost) {
+        this.cost = cost;
+    }
+
     public void setKey(String key) {
         this.key = key;
     }
 
-    public void onRespawn(PlayerRespawnEvent e) {
-    }
+    public void onRespawn(PlayerRespawnEvent e) {}
 
-    public void onDeath(PlayerDeathEvent e) {
-    }
+    public void onDeath(PlayerDeathEvent e) {}
 
-    public void onEquip(Player p) {
-    }
+    public void onEquip(Player p) {}
 
-    public void onUnequip(Player p) {
-    }
+    public void onUnequip(Player p) {}
 }

@@ -1,6 +1,5 @@
-package me.twostinkysocks.boxplugin.perks.impl;
+package me.twostinkysocks.boxplugin.perks;
 
-import me.twostinkysocks.boxplugin.perks.AbstractSelectablePerk;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -17,16 +16,16 @@ import org.bukkit.potion.PotionType;
 
 import java.util.List;
 
-public class MegaPerkResistance extends AbstractSelectablePerk {
-    public MegaPerkResistance() {
+public class MegaPerkSpeed extends AbstractPerk {
+    public MegaPerkSpeed() {
         ItemStack guiItem = new ItemStack(Material.POTION);
         PotionMeta meta = (PotionMeta) guiItem.getItemMeta();
-        meta.setBasePotionData(new PotionData(PotionType.INVISIBILITY));
-        meta.setDisplayName(ChatColor.GRAY + "Mega Resistance");
+        meta.setBasePotionData(new PotionData(PotionType.SPEED));
+        meta.setDisplayName(ChatColor.AQUA + "Mega Speed");
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS);
         meta.setLore(List.of(
                 "",
-                ChatColor.GRAY + "Gain permanent Resistance II"
+                ChatColor.GRAY + "Gain permanent Speed V"
         ));
         guiItem.setItemMeta(meta);
 
@@ -34,13 +33,13 @@ public class MegaPerkResistance extends AbstractSelectablePerk {
 
         setCost(1);
 
-        setKey("mega_perk_resistance");
+        setKey("mega_perk_speed");
     }
 
     @Override
     public void onRespawn(PlayerRespawnEvent e) {
         Player p = e.getPlayer();
-        p.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, Integer.MAX_VALUE, 1, true, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 4, true, false));
     }
 
     @Override
@@ -50,11 +49,11 @@ public class MegaPerkResistance extends AbstractSelectablePerk {
 
     @Override
     public void onEquip(Player p) {
-        p.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, Integer.MAX_VALUE, 1, true, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 4, true, false));
     }
 
     @Override
     public void onUnequip(Player p) {
-        p.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
+        p.removePotionEffect(PotionEffectType.SPEED);
     }
 }

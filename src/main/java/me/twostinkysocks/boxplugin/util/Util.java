@@ -16,6 +16,22 @@ public class Util {
         }
     }
 
+    public static boolean isTeraCube(ItemStack item) {
+        if(item != null && item.getType() == Material.DIAMOND_BLOCK && item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+            return ChatColor.stripColor(item.getItemMeta().getDisplayName()).contains("TeraCube");
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean isHexidium(ItemStack item) {
+        if(item != null && item.getType() == Material.EMERALD_BLOCK && item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+            return ChatColor.stripColor(item.getItemMeta().getDisplayName()).contains("HEXIDIUM");
+        } else {
+            return false;
+        }
+    }
+
     public static boolean isGhastlyHerb(ItemStack item) {
         if(item != null && item.getType() == Material.WITHER_ROSE && item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
             return ChatColor.stripColor(item.getItemMeta().getDisplayName()).contains("Ghastly Herb");

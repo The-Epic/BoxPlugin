@@ -36,6 +36,7 @@ import su.nightexpress.excellentcrates.ExcellentCrates;
 import su.nightexpress.excellentcrates.key.CrateKey;
 import su.nightexpress.excellentcrates.key.KeyManager;
 
+import javax.naming.Name;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -352,8 +353,7 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
             } else if(label.equals("getownedperks")) {
                 p.sendMessage(String.join("\n", getPerksManager().getPurchasedPerks(p).stream().map(pe -> pe.instance.getKey()).collect(Collectors.toList())));
             } else if(label.equals("getselectedperks")) {
-                p.sendMessage(String.join("\n", getPerksManager().getSelectedPerks(p).stream().map(pe -> pe.getKey()).collect(Collectors.toList())));
-            } else if(label.equals("boxgivecommonkey")) {
+                p.sendMessage(String.join("\n", getPerksManager().getSelectedPerks(p).stream().map(pe -> pe.instance.getKey()).collect(Collectors.toList())));            } else if(label.equals("boxgivecommonkey")) {
                 if(!p.hasPermission("boxplugin.givekey")) {
                     p.sendMessage(ChatColor.RED + "You don't have permission!");
                     return true;

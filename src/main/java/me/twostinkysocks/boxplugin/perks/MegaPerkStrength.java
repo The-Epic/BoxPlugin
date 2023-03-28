@@ -1,6 +1,5 @@
-package me.twostinkysocks.boxplugin.perks.impl;
+package me.twostinkysocks.boxplugin.perks;
 
-import me.twostinkysocks.boxplugin.perks.AbstractSelectablePerk;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -16,30 +15,30 @@ import org.bukkit.potion.PotionType;
 
 import java.util.List;
 
-public class PerkStrength extends AbstractSelectablePerk {
-    public PerkStrength() {
+public class MegaPerkStrength extends AbstractPerk {
+    public MegaPerkStrength() {
         ItemStack guiItem = new ItemStack(Material.POTION);
         PotionMeta meta = (PotionMeta) guiItem.getItemMeta();
         meta.setBasePotionData(new PotionData(PotionType.STRENGTH));
-        meta.setDisplayName(ChatColor.RED + "Strength");
+        meta.setDisplayName(ChatColor.RED + "Mega Strength");
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS);
         meta.setLore(List.of(
                 "",
-                ChatColor.GRAY + "Gain permanent Strength I"
+                ChatColor.GRAY + "Gain permanent Strength VI"
         ));
         guiItem.setItemMeta(meta);
 
         setGuiItem(guiItem);
 
-        setCost(2);
+        setCost(1);
 
-        setKey("perk_strength");
+        setKey("mega_perk_strength");
     }
 
     @Override
     public void onRespawn(PlayerRespawnEvent e) {
         Player p = e.getPlayer();
-        p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, 0, true, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, 5, true, false));
     }
 
     @Override
@@ -49,7 +48,7 @@ public class PerkStrength extends AbstractSelectablePerk {
 
     @Override
     public void onEquip(Player p) {
-        p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, 0, true, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, 5, true, false));
     }
 
     @Override

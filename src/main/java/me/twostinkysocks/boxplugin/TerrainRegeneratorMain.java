@@ -17,7 +17,11 @@ import me.twostinkysocks.boxplugin.BoxPlugin;
 import me.twostinkysocks.boxplugin.event.PlayerBoxXpUpdateEvent;
 import net.minecraft.nbt.MojangsonParser;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.entity.EntityInsentient;
+import net.minecraft.world.entity.EntityLiving;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.ai.BehaviorController;
+import net.minecraft.world.entity.monster.warden.Warden;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -25,11 +29,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.craftbukkit.v1_19_R1.block.impl.CraftCommand;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftCreature;
 import org.bukkit.craftbukkit.v1_19_R1.entity.CraftEntity;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.MagmaCube;
-import org.bukkit.entity.Player;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftWarden;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -53,6 +58,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public final class TerrainRegeneratorMain implements Listener, CommandExecutor, TabCompleter {
 
@@ -158,6 +164,32 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
                             int radius = this.config.getInt("entities." + name + ".maxradius");
                             if(entity.getLocation().distance(new Location(Bukkit.getWorld(this.config.getString("entities." + name + ".world")), x, y, z)) > radius) {
                                 entity.teleport(new Location(Bukkit.getWorld(this.config.getString("entities." + name + ".world")), x, y, z));
+                            }
+                        }
+                    }
+                    if(entity.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "respawningmob"), PersistentDataType.INTEGER)) {
+                        String name = entity.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING);
+                        if(this.config.isSet("entities." + name + ".isBoss") && this.config.getBoolean("entities." + name + ".isBoss")) {
+                            if(entity instanceof CraftCreature) {
+                                List<Entity> nearby = entity.getNearbyEntities(35, 35, 35);
+                                List<Player> nearbyPlayers = nearby.stream().filter(e -> {
+                                    return e instanceof Player && (((Player)e).getGameMode() == GameMode.ADVENTURE || ((Player)e).getGameMode() == GameMode.SURVIVAL);
+                                }).map(e -> (Player)e).collect(Collectors.toList());
+                                if(nearbyPlayers.size() > 0) {
+                                    Player nearest = nearbyPlayers.get(0);
+                                    for(Player nearbyEntity : nearbyPlayers) {
+                                        if(nearbyEntity.getLocation().distance(entity.getLocation()) < nearest.getLocation().distance(entity.getLocation())) {
+                                            nearest = nearbyEntity;
+                                        }
+                                    }
+                                    CraftCreature creature = (CraftCreature) entity;
+                                    if(creature.getHandle() instanceof Warden) {
+                                        Warden warden = (Warden) creature.getHandle();
+                                        warden.k(((CraftPlayer) nearest).getHandle()); // setAttackTarget
+                                    } else {
+                                        creature.setTarget(nearest);
+                                    }
+                                }
                             }
                         }
                     }

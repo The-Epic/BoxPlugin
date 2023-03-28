@@ -1,7 +1,6 @@
-package me.twostinkysocks.boxplugin.perks.impl;
+package me.twostinkysocks.boxplugin.perks;
 
 import me.twostinkysocks.boxplugin.BoxPlugin;
-import me.twostinkysocks.boxplugin.perks.AbstractSelectablePerk;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -21,7 +20,7 @@ import org.bukkit.potion.PotionType;
 
 import java.util.List;
 
-public class PerkRockets extends AbstractSelectablePerk {
+public class PerkRockets extends AbstractPerk {
     public PerkRockets() {
         ItemStack guiItem = new ItemStack(Material.FIREWORK_ROCKET);
         FireworkMeta meta = (FireworkMeta) guiItem.getItemMeta();

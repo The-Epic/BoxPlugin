@@ -25,5 +25,20 @@ public class PacketListeners {
                 PacketContainer packet = event.getPacket();
             }
         });
+
+        BoxPlugin.instance.getProtocolManager().addPacketListener(new PacketAdapter(
+                BoxPlugin.instance,
+                ListenerPriority.HIGHEST,
+                PacketType.Play.Server.ENTITY_SOUND
+        ) {
+            @Override
+            public void onPacketSending(PacketEvent event) {
+                PacketContainer packet = event.getPacket();
+                int soundID = packet.getIntegers().read(0);
+                if(soundID == 0) {
+
+                }
+            }
+        });
     }
 }
