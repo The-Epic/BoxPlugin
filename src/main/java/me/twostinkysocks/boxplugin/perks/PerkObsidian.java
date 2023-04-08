@@ -13,6 +13,7 @@ import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
+import javax.naming.Name;
 import java.util.List;
 
 public class PerkObsidian extends AbstractPerk {
@@ -53,11 +54,16 @@ public class PerkObsidian extends AbstractPerk {
     @Override
     public void onEquip(Player p) {
         removeOldObsidianFromInventory(p);
-        addObsidianToInventory(p);
+        if(p.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "obsidian_perk_item_count"), PersistentDataType.INTEGER)) {
+            addObsidianToInventory(p, p.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "obsidian_perk_item_count"), PersistentDataType.INTEGER));
+        } else {
+            addObsidianToInventory(p);
+        }
     }
 
     @Override
     public void onUnequip(Player p) {
+        p.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "obsidian_perk_item_count"), PersistentDataType.INTEGER, getObsidianCountInInventory(p));
         removeOldObsidianFromInventory(p);
     }
 
@@ -69,6 +75,27 @@ public class PerkObsidian extends AbstractPerk {
         }
     }
 
+    private int getObsidianCountInInventory(Player p) {
+        int count = 0;
+        for(ItemStack item : p.getInventory().getContents()) {
+            if(item != null && item.getType() == Material.OBSIDIAN && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) && item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) == 1) {
+                count += item.getAmount();
+            }
+        }
+        return count;
+    }
+
+    private void addObsidianToInventory(Player p, int amount) {
+        ItemStack stack = new ItemStack(Material.OBSIDIAN, amount);
+        ItemMeta meta = stack.getItemMeta();
+        meta.setLore(List.of(
+                "",
+                ChatColor.GRAY + "Perk item"
+        ));
+        meta.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER, 1);
+        stack.setItemMeta(meta);
+        p.getInventory().addItem(stack);
+    }
     private void addObsidianToInventory(Player p) {
         ItemStack stack = new ItemStack(Material.OBSIDIAN, 64);
         ItemMeta meta = stack.getItemMeta();

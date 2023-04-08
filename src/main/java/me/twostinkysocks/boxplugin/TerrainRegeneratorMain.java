@@ -21,6 +21,9 @@ import net.minecraft.world.entity.EntityInsentient;
 import net.minecraft.world.entity.EntityLiving;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ai.BehaviorController;
+import net.minecraft.world.entity.ai.behavior.BehaviorAttackTargetSet;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.monster.EntitySilverfish;
 import net.minecraft.world.entity.monster.warden.Warden;
 import org.bukkit.*;
 import org.bukkit.command.Command;
@@ -30,10 +33,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.v1_19_R1.block.impl.CraftCommand;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftCreature;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftWarden;
+import org.bukkit.craftbukkit.v1_19_R1.entity.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -54,10 +54,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public final class TerrainRegeneratorMain implements Listener, CommandExecutor, TabCompleter {
@@ -155,19 +152,20 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
         tasks.add(Bukkit.getScheduler().runTaskTimer(BoxPlugin.instance, () -> {
             for(World world: Bukkit.getWorlds()) {
                 for(Entity entity : world.getEntities()) {
-                    if(entity.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "respawningmob"), PersistentDataType.INTEGER) && entity.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "respawningmob"), PersistentDataType.INTEGER) == 1) {
+                    if(entity.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING)) {
                         String name = entity.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING);
-                        if(this.config.isSet("entities." + name + ".maxradius")) {
+                        if(this.config.isSet("entities." + name + ".maxradius") && !entity.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "ignoremaxradius"), PersistentDataType.INTEGER)) {
                             int x = this.config.getInt("entities." + name + ".x");
                             int y = this.config.getInt("entities." + name + ".y");
                             int z = this.config.getInt("entities." + name + ".z");
                             int radius = this.config.getInt("entities." + name + ".maxradius");
                             if(entity.getLocation().distance(new Location(Bukkit.getWorld(this.config.getString("entities." + name + ".world")), x, y, z)) > radius) {
                                 entity.teleport(new Location(Bukkit.getWorld(this.config.getString("entities." + name + ".world")), x, y, z));
+                                toDeAgro.add(entity);
                             }
                         }
                     }
-                    if(entity.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "respawningmob"), PersistentDataType.INTEGER)) {
+                    if(entity.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING)) {
                         String name = entity.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING);
                         if(this.config.isSet("entities." + name + ".isBoss") && this.config.getBoolean("entities." + name + ".isBoss")) {
                             if(entity instanceof CraftCreature) {
@@ -192,10 +190,29 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
                                 }
                             }
                         }
+                        if(this.config.isSet("entities." + name + ".teleporting") && this.config.getBoolean("entities." + name + ".teleporting")) {
+                            if(entity instanceof CraftCreature) {
+                                List<Entity> nearby = entity.getNearbyEntities(5, 5, 5);
+                                List<Player> nearbyPlayers = nearby.stream().filter(e -> {
+                                    return e instanceof Player && (((Player)e).getGameMode() == GameMode.ADVENTURE || ((Player)e).getGameMode() == GameMode.SURVIVAL);
+                                }).map(e -> (Player)e).collect(Collectors.toList());
+                                if(nearbyPlayers.size() > 0) {
+                                    Player nearest = nearbyPlayers.get(0);
+                                    for(Player nearbyEntity : nearbyPlayers) {
+                                        if(nearbyEntity.getLocation().distance(entity.getLocation()) < nearest.getLocation().distance(entity.getLocation())) {
+                                            nearest = nearbyEntity;
+                                        }
+                                    }
+                                    CraftCreature creature = (CraftCreature) entity;
+                                    creature.teleport(nearest.getLocation());
+                                    nearest.playSound(nearest.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
+                                }
+                            }
+                        }
                     }
                 }
             }
-        }, 200L, 200L));
+        }, 280L, 280L));
 
         return this.config.getConfigurationSection("schematics").getKeys(false).toArray().length + this.config.getConfigurationSection("entities").getKeys(false).toArray().length;
     }
@@ -291,7 +308,7 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
     @EventHandler
     public void onUnloadChunk(ChunkUnloadEvent e) {
         for(Entity entity : e.getChunk().getEntities()) {
-            if(entity.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "respawningmob"), PersistentDataType.INTEGER)) {
+            if(entity.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING)) {
                 e.getChunk().addPluginChunkTicket(BoxPlugin.instance);
             }
         }
@@ -299,7 +316,20 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
 
     @EventHandler
     public void onEntityTarget(EntityTargetEvent e) {
-        for(Entity entity : toDeAgro) {
+//        if(e.getEntity() instanceof Warden && e.getTarget() instanceof Silverfish) {
+//            Warden nmsWarden = ((CraftWarden) e.getEntity()).getHandle();
+//            nmsWarden.k((EntityLiving) null);
+//            e.setTarget(null);
+//            e.setCancelled(true);
+//        }
+//        if(e.getEntity() instanceof Silverfish && e.getTarget() instanceof Warden) {
+//            Warden nmsWarden = ((CraftWarden) e.getTarget()).getHandle();
+//            nmsWarden.k((EntityLiving) null);
+//            nmsWarden.dy().b(MemoryModuleType.o);
+//            e.setTarget(null);
+//            e.setCancelled(true);
+//        }
+        for(Entity entity : new ArrayList<>(toDeAgro)) {
             if(entity.getUniqueId().equals(e.getEntity().getUniqueId())) {
                 e.setTarget(null);
                 toDeAgro.remove(entity);

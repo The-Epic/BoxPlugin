@@ -284,7 +284,6 @@ public class Listeners implements Listener {
         int causelevel = BoxPlugin.instance.getXpManager().getLevel(cause);
         int causexp = BoxPlugin.instance.getXpManager().getXP(cause);
         int targetlevel = BoxPlugin.instance.getXpManager().getLevel(target);
-        BoxPlugin.instance.getPvpManager().registerKill(cause, target); // resets streak here
         if(targetlevel >= 100 && causelevel >= 100) {
             HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
             toDrop.forEach((i, item) -> {
@@ -293,7 +292,7 @@ public class Listeners implements Listener {
             });
             cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
             BoxPlugin.instance.getXpManager().addXP(cause, 5000);
-            Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 100));
+            Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 5000));
         } else if(targetlevel >= causelevel) {
             HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
             toDrop.forEach((i, item) -> {
@@ -302,7 +301,7 @@ public class Listeners implements Listener {
             });
             cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
             BoxPlugin.instance.getXpManager().addXP(cause, 1000);
-            Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 100));
+            Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 1000));
         } else if(targetlevel - causelevel >= -10) {
             HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
             toDrop.forEach((i, item) -> {
@@ -311,8 +310,22 @@ public class Listeners implements Listener {
             });
             cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
             BoxPlugin.instance.getXpManager().addXP(cause, 200);
-            Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 10));
-        } // else nothing
+            Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 200));
+        } else {
+            if(causelevel - targetlevel >= 15) {
+                e.setKeepInventory(true);
+                e.getDrops().clear();
+            }
+            if(BoxPlugin.instance.getPvpManager().getBounty(target) > 1) {
+                HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
+                toDrop.forEach((i, item) -> {
+                    Item droppedItem = (Item) cause.getWorld().spawnEntity(cause.getLocation(), EntityType.DROPPED_ITEM);
+                    droppedItem.setItemStack(item);
+                });
+                cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
+            }
+        }
+        BoxPlugin.instance.getPvpManager().registerKill(cause, target); // resets streak here
         BoxPlugin.instance.getScoreboardManager().queueUpdate(cause);
         BoxPlugin.instance.getScoreboardManager().queueUpdate(target);
     }
@@ -327,7 +340,7 @@ public class Listeners implements Listener {
             int toAdd = (int) (difference * multiplier) - difference;
             BoxPlugin.instance.getXpManager().addXP(p, toAdd);
         }
-        int afterlevel = BoxPlugin.instance.getXpManager().convertXPToLevel(e.getAfterXP());
+        int afterlevel = BoxPlugin.instance.getXpManager().convertXPToLevel(BoxPlugin.instance.getXpManager().getXP(p));
 
         BoxPlugin.instance.getXpManager().handleGroupUpdate(p, beforelevel, afterlevel);
         if(beforelevel < afterlevel) {

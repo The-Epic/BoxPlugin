@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryInteractEvent;
@@ -29,6 +30,7 @@ public abstract class CustomItem {
     private String itemId;
     private Consumer<Player> leave;
     private Consumer<Player> join;
+    private Consumer<EntityInteractEvent> entityInteract;
     private BiConsumer<PlayerInteractEvent, Action> click;
     private Consumer<EntityTargetEvent> entityTarget;
 
@@ -42,7 +44,7 @@ public abstract class CustomItem {
         this.leave = p -> {};
         this.join = p -> {};
         this.entityTarget = e -> {};
-
+        this.entityInteract = e -> {};
         this.item = new ItemStack(material);
 
         ItemMeta im = item.getItemMeta();
@@ -77,6 +79,14 @@ public abstract class CustomItem {
 
     public void setJoin(Consumer<Player> toRun) {
         this.join = toRun;
+    }
+
+    public void setEntityInteract(Consumer<EntityInteractEvent> e) {
+        this.entityInteract = e;
+    }
+
+    public Consumer<EntityInteractEvent> getEntityInteract() {
+        return entityInteract;
     }
 
     public BiConsumer<PlayerInteractEvent, Action> getClick() {

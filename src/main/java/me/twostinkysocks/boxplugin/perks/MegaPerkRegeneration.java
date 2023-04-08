@@ -25,7 +25,7 @@ public class MegaPerkRegeneration extends AbstractPerk {
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS);
         meta.setLore(List.of(
                 "",
-                ChatColor.GRAY + "Gain permanent Regeneration I"
+                ChatColor.GRAY + "Gain permanent Regeneration II"
         ));
         guiItem.setItemMeta(meta);
 
@@ -39,7 +39,7 @@ public class MegaPerkRegeneration extends AbstractPerk {
     @Override
     public void onRespawn(PlayerRespawnEvent e) {
         Player p = e.getPlayer();
-        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 0, true, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 1, true, false));
     }
 
     @Override
@@ -49,7 +49,7 @@ public class MegaPerkRegeneration extends AbstractPerk {
 
     @Override
     public void onEquip(Player p) {
-        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 0, true, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 1, true, false));
     }
 
     @Override

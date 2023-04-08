@@ -8,10 +8,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryInteractEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
+import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -51,6 +53,20 @@ public class Listeners implements Listener {
                     }
                 }
             }
+        }
+    }
+
+    @EventHandler
+    public void entityInteract(EntityInteractEvent e) {
+        for(CustomItem i : items) {
+            i.getEntityInteract().accept(e);
+        }
+    }
+
+    @EventHandler
+    public void armorStandInteract(PlayerArmorStandManipulateEvent e) {
+        if(e.getRightClicked().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "THROWING_KNIFE"), PersistentDataType.INTEGER)) {
+            e.setCancelled(true);
         }
     }
 

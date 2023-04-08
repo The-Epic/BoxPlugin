@@ -59,11 +59,16 @@ public class PerkRockets extends AbstractPerk {
     @Override
     public void onEquip(Player p) {
         removeOldRocketsFromInventory(p);
-        addRocketsToInventory(p);
+        if(p.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "rocket_perk_item_count"), PersistentDataType.INTEGER)) {
+            addRocketsToInventory(p, p.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "rocket_perk_item_count"), PersistentDataType.INTEGER));
+        } else {
+            addRocketsToInventory(p);
+        }
     }
 
     @Override
     public void onUnequip(Player p) {
+        p.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "rocket_perk_item_count"), PersistentDataType.INTEGER, getRocketCountInInventory(p));
         removeOldRocketsFromInventory(p);
     }
 
@@ -75,8 +80,31 @@ public class PerkRockets extends AbstractPerk {
         }
     }
 
+    private int getRocketCountInInventory(Player p) {
+        int count = 0;
+        for(ItemStack item : p.getInventory().getContents()) {
+            if(item != null && item.getType() == Material.FIREWORK_ROCKET && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) && item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) == 1) {
+                count += item.getAmount();
+            }
+        }
+        return count;
+    }
+
     private void addRocketsToInventory(Player p) {
         ItemStack stack = new ItemStack(Material.FIREWORK_ROCKET, 32);
+        FireworkMeta meta = (FireworkMeta) stack.getItemMeta();
+        meta.setPower(3);
+        meta.setLore(List.of(
+                "",
+                ChatColor.GRAY + "Perk item"
+        ));
+        meta.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER, 1);
+        stack.setItemMeta(meta);
+        p.getInventory().addItem(stack);
+    }
+
+    private void addRocketsToInventory(Player p, int count) {
+        ItemStack stack = new ItemStack(Material.FIREWORK_ROCKET, count);
         FireworkMeta meta = (FireworkMeta) stack.getItemMeta();
         meta.setPower(3);
         meta.setLore(List.of(

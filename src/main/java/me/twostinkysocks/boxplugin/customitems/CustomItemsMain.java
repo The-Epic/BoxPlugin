@@ -46,6 +46,8 @@ public class CustomItemsMain implements CommandExecutor, TabCompleter {
         registerItem(new SuperSexShovel(this));
         registerItem(new WitherSkullSword(this));
         registerItem(new SpaceHelmet(this));
+        registerItem(new AxeOfTheShredded(this));
+        registerItem(new AugmentedRailgun(this));
         BoxPlugin.instance.getLogger().info("Loaded custom items!");
     }
 

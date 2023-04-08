@@ -3,15 +3,15 @@ package me.twostinkysocks.boxplugin.manager;
 import me.twostinkysocks.boxplugin.BoxPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.scoreboard.*;
-import org.checkerframework.checker.units.qual.A;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Score;
+import org.bukkit.scoreboard.Scoreboard;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ScoreboardManager {
@@ -19,10 +19,12 @@ public class ScoreboardManager {
     private ArrayList<Player> queuedScoreboardUpdates;
 
     public ScoreboardManager() {
-        queuedScoreboardUpdates = new ArrayList<Player>();
+        queuedScoreboardUpdates = new ArrayList<>();
         Bukkit.getScheduler().runTaskTimer(BoxPlugin.instance, () -> {
             for(Player p : BoxPlugin.instance.getScoreboardManager().getQueuedUpdates()) {
-                updatePlayerScoreboard(p);
+                if(p.isValid() && p.isOnline()) {
+                    updatePlayerScoreboard(p);
+                }
             }
             BoxPlugin.instance.getScoreboardManager().clearQueuedUpdates();
         }, 20L, 20L);
@@ -45,15 +47,16 @@ public class ScoreboardManager {
 
     public void updatePlayerScoreboard(Player p) {
 
-        List<String> list = BoxPlugin.instance.getConfig().getList("scoreboard").stream().map(s -> ChatColor.translateAlternateColorCodes('&', (String) s)).collect(Collectors.toList());
+        List<String> list = Objects.requireNonNull(BoxPlugin.instance.getConfig().getList("scoreboard")).stream().map(s -> ChatColor.translateAlternateColorCodes('&', (String) s)).collect(Collectors.toList());
 
         org.bukkit.scoreboard.ScoreboardManager manager = Bukkit.getScoreboardManager();
+        assert manager != null;
         Scoreboard scoreboard = manager.getNewScoreboard();
 
         Objective objective = scoreboard.registerNewObjective("scoreboard", "dummy", list.remove(0));
 
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
-        List<Score> scores = new ArrayList<Score>();
+        List<Score> scores = new ArrayList<>();
 
         for(int i = 0; i < list.size(); i++) {
             Score score = objective.getScore(ChatColor.translateAlternateColorCodes(
