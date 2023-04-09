@@ -192,7 +192,7 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
                         }
                         if(this.config.isSet("entities." + name + ".teleporting") && this.config.getBoolean("entities." + name + ".teleporting")) {
                             if(entity instanceof CraftCreature) {
-                                List<Entity> nearby = entity.getNearbyEntities(5, 5, 5);
+                                List<Entity> nearby = entity.getNearbyEntities(5, 30, 5);
                                 List<Player> nearbyPlayers = nearby.stream().filter(e -> {
                                     return e instanceof Player && (((Player)e).getGameMode() == GameMode.ADVENTURE || ((Player)e).getGameMode() == GameMode.SURVIVAL);
                                 }).map(e -> (Player)e).collect(Collectors.toList());
