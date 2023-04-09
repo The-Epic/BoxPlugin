@@ -32,7 +32,7 @@ public class WitherSkullSword extends CustomItem {
             Player p = e.getPlayer();
             if(a == Action.RIGHT_CLICK_AIR || a == Action.RIGHT_CLICK_BLOCK) {
                 if(p.hasPermission("customitems.cooldownbypass") || !cooldown.containsKey(p.getUniqueId()) || cooldown.get(p.getUniqueId()) < System.currentTimeMillis()) {
-                    cooldown.put(p.getUniqueId(), System.currentTimeMillis() + 5000); // 5 seconds
+                    cooldown.put(p.getUniqueId(), System.currentTimeMillis() + 9000); // 9 seconds
                     //
                     WitherSkull skull = (WitherSkull) p.getWorld().spawnEntity(p.getLocation().add(0, 1, 0), EntityType.WITHER_SKULL);
                     skull.setCharged(true);

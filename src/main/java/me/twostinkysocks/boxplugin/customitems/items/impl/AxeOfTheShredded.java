@@ -106,6 +106,9 @@ public class AxeOfTheShredded extends CustomItem {
             if(entity instanceof Damageable && !entity.equals(p) && !(entity.getType() == EntityType.ARMOR_STAND)) {
                 Damageable damageable = (Damageable) entity;
                 damageable.damage(90, p);
+                if(entity instanceof LivingEntity) {
+                    ((LivingEntity) entity).setNoDamageTicks(0);
+                }
                 p.playSound(p.getLocation(), Sound.ITEM_FLINTANDSTEEL_USE, 0.5f, 0.5f);
             }
         }

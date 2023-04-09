@@ -205,7 +205,7 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
                                     }
                                     CraftCreature creature = (CraftCreature) entity;
                                     creature.teleport(nearest.getLocation());
-                                    nearest.playSound(nearest.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
+                                    nearest.getWorld().playSound(nearest.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
                                 }
                             }
                         }

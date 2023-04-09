@@ -302,7 +302,7 @@ public class Listeners implements Listener {
             cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
             BoxPlugin.instance.getXpManager().addXP(cause, 1000);
             Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 1000));
-        } else if(targetlevel - causelevel >= -10) {
+        } else if(targetlevel - causelevel >= -20) {
             HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
             toDrop.forEach((i, item) -> {
                 Item droppedItem = (Item) cause.getWorld().spawnEntity(cause.getLocation(), EntityType.DROPPED_ITEM);
@@ -312,9 +312,10 @@ public class Listeners implements Listener {
             BoxPlugin.instance.getXpManager().addXP(cause, 200);
             Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 200));
         } else {
-            if(causelevel - targetlevel >= 15) {
+            if(causelevel - targetlevel >= 20) {
                 e.setKeepInventory(true);
                 e.getDrops().clear();
+                target.sendMessage(ChatColor.GRAY + "You kept your items because the player who killed you was a significantly higher level.");
             }
             if(BoxPlugin.instance.getPvpManager().getBounty(target) > 1) {
                 HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
