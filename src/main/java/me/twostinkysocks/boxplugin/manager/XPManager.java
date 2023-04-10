@@ -65,10 +65,36 @@ public class XPManager {
         return xpDiff - xpRemainder;
     }
 
+    public int getLevelUpReward(int level) {
+        int coins = level/2;
+        if(coins > 64) coins = 64;
+        return coins;
+    }
+
+    public int getLevelUpRewardLevelToLevel(int beforeLevel, int afterLevel) {
+        int total = 0;
+        for(int i = beforeLevel; i <= afterLevel; i++) {
+            if(i%5==0) {
+                total+=getLevelUpReward(i);
+            }
+        }
+        return total;
+    }
+
+    public int getCumulativeLevelUpReward(int level) {
+        int total = 0;
+        for(int i = 1; i <= level; i++) {
+            if(i%5==0) {
+                total += getLevelUpReward(i);
+            }
+        }
+        return total;
+    }
+
     public void handleGroupUpdate(Player p, int beforelevel, int afterlevel) {
         User user = BoxPlugin.instance.getLuckPerms().getUserManager().getUser(p.getUniqueId());
         // add xp
-        if(beforelevel < 20 && afterlevel >= 20) {
+        if(beforelevel < 15 && afterlevel >= 15) {
             InheritanceNode node = InheritanceNode.builder("lvl20").value(true).build();
             user.data().add(node);
         }
@@ -106,7 +132,7 @@ public class XPManager {
             InheritanceNode node = InheritanceNode.builder("lvl35").value(false).build();
             user.data().add(node);
         }
-        if(afterlevel < 20 && beforelevel >= 20) {
+        if(afterlevel < 15 && beforelevel >= 15) {
             InheritanceNode node = InheritanceNode.builder("lvl20").value(false).build();
             user.data().add(node);
         }

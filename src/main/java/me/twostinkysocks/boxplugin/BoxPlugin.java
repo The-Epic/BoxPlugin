@@ -17,6 +17,7 @@ import me.twostinkysocks.boxplugin.manager.PerksManager;
 import me.twostinkysocks.boxplugin.manager.ScoreboardManager;
 import me.twostinkysocks.boxplugin.manager.XPManager;
 import me.twostinkysocks.boxplugin.util.PlaceholderAPIExpansion;
+import me.twostinkysocks.boxplugin.util.Util;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import org.bukkit.*;
@@ -29,6 +30,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
 import su.nexmedia.engine.api.config.JYML;
@@ -37,6 +39,7 @@ import su.nightexpress.excellentcrates.key.CrateKey;
 import su.nightexpress.excellentcrates.key.KeyManager;
 
 import javax.naming.Name;
+import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -142,6 +145,7 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
         getCommand("clearstreak").setExecutor(this);
         getCommand("clearstreak").setTabCompleter(this);
         getCommand("tree").setExecutor(this);
+        getCommand("claimlegacyrewards").setExecutor(this);
         getServer().getPluginManager().registerEvents(new Listeners(), this);
         load();
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -459,6 +463,15 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "place feature oak " + x + " " + y + " " + z);
                 p.getWorld().getBlockAt(x, y-1, z).setType(Material.OAK_LOG);
                 p.sendMessage(ChatColor.GREEN + "Placed tree!");
+            } else if(label.equals("claimlegacyrewards")) {
+                if(p.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "legacylevelscompensated"), PersistentDataType.INTEGER)) {
+                    p.sendMessage(ChatColor.RED + "You have no rewards to claim!");
+                } else {
+                    int total = BoxPlugin.instance.getXpManager().getCumulativeLevelUpReward(BoxPlugin.instance.getXpManager().getLevel(p));
+                    p.getInventory().addItem(Util.gigaCoin(total));
+                    p.sendMessage(ChatColor.GREEN + "Claimed " + total + " giga coins!");
+                    p.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "legacylevelscompensated"), PersistentDataType.INTEGER, 1);
+                }
             }
         }
 

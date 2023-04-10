@@ -121,6 +121,25 @@ public class Listeners implements Listener {
         if(!p.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER)) {
             p.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER, 0);
         }
+
+        // legacy xp
+
+        if(BoxPlugin.instance.getXpManager().getXP(p) == 0) { // add flag by default if new player
+            p.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "legacylevelscompensated"), PersistentDataType.INTEGER, 1);
+        }
+        if(BoxPlugin.instance.getXpManager().getXP(p) > 0 && !p.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "legacylevelscompensated"), PersistentDataType.INTEGER)) {
+            p.sendTitle(ChatColor.RED + "Make sure to read chat!", null, 10, 100, 10);
+            Bukkit.getScheduler().runTaskLater(BoxPlugin.instance, () -> {
+                p.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "Unrewarded Levels!");
+                p.sendMessage(ChatColor.RED + "Leveling up now rewards coins over time, which you haven't claimed!");
+                p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You cannot gain xp until you claim your levelup rewards with " + ChatColor.GREEN + ChatColor.BOLD + "/claimlegacyrewards");
+                p.sendMessage(ChatColor.RED + "Make sure to clear your inventory before claiming rewards!");
+            },5);
+        }
+
+        //
+
+
 //        BoxPlugin.instance.getLeaderboardManager().updateLeaderboard(p);
         BoxPlugin.instance.getScoreboardManager().updatePlayerScoreboard(p);
     }
@@ -343,13 +362,43 @@ public class Listeners implements Listener {
         }
         int afterlevel = BoxPlugin.instance.getXpManager().convertXPToLevel(BoxPlugin.instance.getXpManager().getXP(p));
 
+        // legacy xp
+
+        if(!p.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "legacylevelscompensated"), PersistentDataType.INTEGER)) {
+            p.sendTitle(ChatColor.RED + "Make sure to read chat!", null, 10, 100, 10);
+            p.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "Unrewarded Levels!");
+            p.sendMessage(ChatColor.RED + "Leveling up now rewards coins over time, which you haven't claimed!");
+            p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You cannot gain xp until you claim your levelup rewards with " + ChatColor.GREEN + ChatColor.BOLD + "/claimlegacyrewards");
+            p.sendMessage(ChatColor.RED + "Make sure to clear your inventory before claiming rewards!");
+            BoxPlugin.instance.getXpManager().setXP(p, e.getBeforeXP());
+            return;
+        }
+
+        if(BoxPlugin.instance.getXpManager().getLevel(p)%5 == 0&& BoxPlugin.instance.getXpManager().convertXPToLevel(e.getBeforeXP())%5 != 0) {
+            int toGive = BoxPlugin.instance.getXpManager().getLevelUpRewardLevelToLevel(BoxPlugin.instance.getXpManager().convertXPToLevel(e.getBeforeXP()), BoxPlugin.instance.getXpManager().getLevel(p));
+            HashMap<Integer, ItemStack> toDrop = p.getInventory().addItem(Util.gigaCoin(toGive));
+            toDrop.forEach((index, item) -> {
+                Item entity = (Item) p.getWorld().spawnEntity(p.getLocation(), EntityType.DROPPED_ITEM);
+                entity.setItemStack(item);
+            });
+            p.sendMessage(ChatColor.GOLD + "Earned " + ChatColor.BOLD + toGive + " Giga Coins " + ChatColor.GOLD + "from leveling up!");
+        } else if(Math.abs(BoxPlugin.instance.getXpManager().getLevel(p)-BoxPlugin.instance.getXpManager().convertXPToLevel(e.getBeforeXP()))>=5) {
+            int toGive = BoxPlugin.instance.getXpManager().getLevelUpRewardLevelToLevel(BoxPlugin.instance.getXpManager().convertXPToLevel(e.getBeforeXP()), BoxPlugin.instance.getXpManager().getLevel(p));
+            HashMap<Integer, ItemStack> toDrop = p.getInventory().addItem(Util.gigaCoin(toGive));
+            toDrop.forEach((index, item) -> {
+                Item entity = (Item) p.getWorld().spawnEntity(p.getLocation(), EntityType.DROPPED_ITEM);
+                entity.setItemStack(item);
+            });
+            p.sendMessage(ChatColor.GOLD + "Earned " + ChatColor.BOLD + toGive + " Giga Coins " + ChatColor.GOLD + "from leveling up!");
+        }
+
+        //
         BoxPlugin.instance.getXpManager().handleGroupUpdate(p, beforelevel, afterlevel);
         if(beforelevel < afterlevel) {
             p.resetTitle();
             p.sendTitle(ChatColor.AQUA + "" + ChatColor.BOLD + "LEVEL UP!", ChatColor.GRAY + "" + beforelevel + " → " + afterlevel, 10, 40, 10);
             p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1f);
         }
-
         // remove second perk
         if(afterlevel < 50 && beforelevel >= 50) {
             List<Perk> selected = BoxPlugin.instance.getPerksManager().getSelectedPerks(p);

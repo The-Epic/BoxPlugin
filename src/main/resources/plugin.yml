@@ -61,6 +61,9 @@ commands:
     permission: customitems.give
     description: set id
     usage: /<command>
+  claimlegacyrewards:
+    usage: /<command>
+    description: claim legacy rewards
 permissions:
   boxplugin.crash:
     default: false

@@ -8,10 +8,10 @@ import me.twostinkysocks.boxplugin.util.MathUtil;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
-import org.bukkit.entity.Damageable;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.block.Action;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
 
@@ -178,7 +178,9 @@ public class AugmentedRailgun extends CustomItem {
                 Vector direc2 = direction.clone().normalize().multiply(0.1);
                 Vector direc = direc2.clone();
                 for(Laser laser : lasers) {
-                    laser.stop();
+                    if(laser.isStarted()) {
+                        laser.stop();
+                    }
                 }
                 for(int i = 0; i < 500; i++) {
                     p.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, new Location(p.getWorld(), startLoc.getX() + direc.getX(), startLoc.getY() + direc.getY(), startLoc.getZ() + direc.getZ()), 1, 0, 0, 0);
@@ -198,6 +200,11 @@ public class AugmentedRailgun extends CustomItem {
             p.getWorld().playSound(startLoc, Sound.ENTITY_WITHER_DEATH, 0.2f, 2f);
             p.getWorld().playSound(startLoc, Sound.ENTITY_WARDEN_SONIC_BOOM, 0.35f, 1.6f);
             p.getWorld().playSound(startLoc, Sound.ITEM_TRIDENT_THUNDER, 0.5f, 0.85f);
+            for(Laser l : lasers) {
+                if(l.isStarted()) {
+                    l.stop();
+                }
+            }
         }, 20);
 
     }
@@ -211,7 +218,12 @@ public class AugmentedRailgun extends CustomItem {
             List<Entity> nearbyEntities = new ArrayList<>(startLoc.getWorld().getNearbyEntities(startLoc, 50, 50, 50));
             List<Damageable> damageables = raycastEntities(lineOfSight, nearbyEntities);
             for(Damageable d : damageables) {
-                d.damage(60, p);
+                if(d instanceof ArmorStand) return;
+                if(d instanceof ItemFrame) return;
+                if(d instanceof LivingEntity) {
+                    ((LivingEntity) d).addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 2, 2, true, false));
+                }
+                d.damage(75, p);
             }
         }, 20);
     }
