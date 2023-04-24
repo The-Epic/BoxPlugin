@@ -221,6 +221,7 @@ public class AugmentedRailgun extends CustomItem {
                 if(d instanceof ArmorStand) return;
                 if(d instanceof ItemFrame) return;
                 if(d instanceof LivingEntity) {
+                    if(d.getUniqueId().equals(p.getUniqueId())) return;
                     ((LivingEntity) d).addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 2, 2, true, false));
                 }
                 d.damage(75, p);

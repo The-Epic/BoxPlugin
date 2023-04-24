@@ -439,6 +439,7 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                     return true;
                 }
                 getCompressor().compressAll(p);
+                getCompressor().compressAll(p);
                 p.sendMessage(ChatColor.AQUA + "Compressed your inventory!");
                 p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_USE, 1f, 2f);
             } else if(label.equals("clearstreak")) {

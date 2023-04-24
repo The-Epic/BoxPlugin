@@ -37,6 +37,7 @@ import org.bukkit.craftbukkit.v1_19_R1.entity.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.SlimeSplitEvent;
@@ -149,6 +150,20 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
                 e.printStackTrace();
             }
         }
+        tasks.add(Bukkit.getScheduler().runTaskTimer(BoxPlugin.instance, () -> {
+            for(World world: Bukkit.getWorlds()) {
+                for(Entity entity : world.getEntities()) {
+                    if(entity instanceof Slime) {
+                        Slime slime = (Slime) entity;
+                        if(slime.getSize() == 1) {
+                            slime.remove();
+                        }
+                    } else if(entity instanceof Drowned) {
+                        entity.remove();
+                    }
+                }
+            }
+        }, 30 * 60 * 20, 30 * 60 * 20));
         tasks.add(Bukkit.getScheduler().runTaskTimer(BoxPlugin.instance, () -> {
             for(World world: Bukkit.getWorlds()) {
                 for(Entity entity : world.getEntities()) {
@@ -285,6 +300,30 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
     public void onDeath(EntityDeathEvent e) {
         if(spawnedEntities.containsValue(e.getEntity().getUniqueId())) {
             spawnedEntities.values().remove(e.getEntity().getUniqueId());
+        }
+    }
+
+    @EventHandler
+    public void onDamage(EntityDamageByEntityEvent e) {
+        Entity entity = e.getEntity();
+        if(entity.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING)) {
+            String name = entity.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING);
+            if(e.getEntity() instanceof CraftCreature && this.config.isSet("entities." + name + ".teleporting")) {
+                int rand = (int)(Math.random() * (10) + 1);
+                if(rand == 1) {
+                    Player p = null;
+                    if((e.getDamager() instanceof Projectile && ((Projectile)e.getDamager()).getShooter() instanceof Player)) {
+                        p = (Player) ((Projectile)e.getDamager()).getShooter();
+                    } else if(e.getDamager() instanceof Player) {
+                        p = (Player) e.getDamager();
+                    }
+                    if(p != null) {
+                        CraftCreature creature = (CraftCreature) e.getEntity();
+                        creature.teleport(p.getLocation());
+                        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
+                    }
+                }
+            }
         }
     }
 

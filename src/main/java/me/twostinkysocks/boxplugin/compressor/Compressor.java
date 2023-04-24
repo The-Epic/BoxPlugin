@@ -19,6 +19,7 @@ public class Compressor {
         compressibleItems.add(new CompressibleRedstoneBlock());
         compressibleItems.add(new CompressibleNetheriteBlock());
         compressibleItems.add(new CompressibleCopperBlock());
+        compressibleItems.add(new CompressibleLapisBlock());
         compressibleItems.add(new CompressibleIronBlock());
         compressibleItems.add(new CompressibleQuartzBlock());
         compressibleItems.add(new CompressibleCoalBlock());
@@ -30,8 +31,8 @@ public class Compressor {
         compressibleItems.add(new CompressibleIron());
         compressibleItems.add(new CompressibleCopper());
         compressibleItems.add(new CompressibleGold());
-        compressibleItems.add(new CompressibleRedstone());
         compressibleItems.add(new CompressibleLapis());
+        compressibleItems.add(new CompressibleRedstone());
         compressibleItems.add(new CompressibleQuartz());
         compressibleItems.add(new CompressibleEmerald());
         compressibleItems.add(new CompressibleDiamond());

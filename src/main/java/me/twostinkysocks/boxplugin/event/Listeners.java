@@ -5,6 +5,7 @@ import me.twostinkysocks.boxplugin.perks.PerkXPBoost;
 import me.twostinkysocks.boxplugin.util.Util;
 import me.twostinkysocks.boxplugin.manager.PerksManager.Perk;
 import org.bukkit.*;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftCreature;
 import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryPlayer;
 import org.bukkit.entity.*;
@@ -23,12 +24,16 @@ import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 
 public class Listeners implements Listener {
@@ -48,6 +53,10 @@ public class Listeners implements Listener {
             BoxPlugin.instance.getXpManager().addXP(e.getEntity().getKiller(), e.getEntity().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER));
             int after = BoxPlugin.instance.getXpManager().getXP(e.getEntity().getKiller());
             Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(e.getEntity().getKiller(), before, after));
+        }
+        if(e.getEntityType() == EntityType.GUARDIAN) {
+            Item drop = (Item) e.getEntity().getWorld().spawnEntity(e.getEntity().getLocation(), EntityType.DROPPED_ITEM);
+            drop.setItemStack(new ItemStack(Material.PRISMARINE_CRYSTALS));
         }
     }
 
@@ -82,14 +91,6 @@ public class Listeners implements Listener {
 
     @EventHandler
     public void entityDamage(EntityDamageByEntityEvent e) {
-        if(e.getDamager() instanceof Player) {
-            Player p = (Player) e.getDamager();
-            Entity interacted = e.getEntity();
-            if(interacted.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "perk_npc"), PersistentDataType.INTEGER) && interacted.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "perk_npc"), PersistentDataType.INTEGER) == 1) {
-                e.setCancelled(true);
-                BoxPlugin.instance.getPerksManager().openMainGui(p);
-            }
-        }
         if(e.getDamager() instanceof WitherSkull && !(e.getEntity() instanceof HumanEntity) && !(e.getEntity() instanceof Mob)) {
             e.setCancelled(true);
         }
@@ -303,15 +304,54 @@ public class Listeners implements Listener {
         int causelevel = BoxPlugin.instance.getXpManager().getLevel(cause);
         int causexp = BoxPlugin.instance.getXpManager().getXP(cause);
         int targetlevel = BoxPlugin.instance.getXpManager().getLevel(target);
-        if(targetlevel >= 100 && causelevel >= 100) {
+        if(targetlevel >= 400) {
             HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
             toDrop.forEach((i, item) -> {
                 Item droppedItem = (Item) cause.getWorld().spawnEntity(cause.getLocation(), EntityType.DROPPED_ITEM);
                 droppedItem.setItemStack(item);
             });
             cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
-            BoxPlugin.instance.getXpManager().addXP(cause, 5000);
-            Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 5000));
+            BoxPlugin.instance.getXpManager().addXP(cause, 50000);
+            Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 50000));
+        } else if(targetlevel >= 150 && causelevel >= 150) {
+            if(causelevel - targetlevel >= 40) { // difference is greater than 40
+                e.setKeepInventory(true);
+                e.getDrops().clear();
+                for(int i = 0; i < e.getEntity().getInventory().getSize(); i++) {
+                    int rand = (int)(Math.random() * (4) + 1);
+                    if(rand == 1) {
+                        if(e.getEntity().getInventory().getItem(i) != null) {
+                            Item itemDrop = (Item) e.getEntity().getWorld().spawnEntity(e.getEntity().getLocation(), EntityType.DROPPED_ITEM);
+                            itemDrop.setItemStack(e.getEntity().getInventory().getItem(i));
+                            e.getEntity().getInventory().setItem(i, null);
+                        }
+                    }
+                }
+                ArrayList<ItemStack> armor = new ArrayList<>(List.of(e.getEntity().getInventory().getArmorContents()));
+                for(int i = 0; i < e.getEntity().getInventory().getArmorContents().length; i++) {
+                    int rand = (int)(Math.random() * (4) + 1);
+                    if(rand == 1) {
+                        if(e.getEntity().getInventory().getArmorContents()[i] != null) {
+                            Item itemDrop = (Item) e.getEntity().getWorld().spawnEntity(e.getEntity().getLocation(), EntityType.DROPPED_ITEM);
+                            itemDrop.setItemStack(e.getEntity().getInventory().getArmorContents()[i]);
+                            armor.set(i, null);
+                        }
+                    }
+                }
+                e.getEntity().getInventory().setArmorContents(armor.toArray(new ItemStack[4]));
+                BoxPlugin.instance.getXpManager().addXP(cause, 1000);
+                Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 1000));
+                target.sendMessage(ChatColor.GRAY + "You kept most of your items, because the player who killed you was a significantly higher level.");
+            } else {
+                BoxPlugin.instance.getXpManager().addXP(cause, 15000);
+                Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 15000));
+            }
+            HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
+            toDrop.forEach((i, item) -> {
+                Item droppedItem = (Item) cause.getWorld().spawnEntity(cause.getLocation(), EntityType.DROPPED_ITEM);
+                droppedItem.setItemStack(item);
+            });
+            cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
         } else if(targetlevel >= causelevel) {
             HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
             toDrop.forEach((i, item) -> {
@@ -319,22 +359,44 @@ public class Listeners implements Listener {
                 droppedItem.setItemStack(item);
             });
             cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
-            BoxPlugin.instance.getXpManager().addXP(cause, 1000);
-            Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 1000));
-        } else if(targetlevel - causelevel >= -20) {
+            BoxPlugin.instance.getXpManager().addXP(cause, 3000);
+            Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 3000));
+        } else if(targetlevel - causelevel >= -20) { // difference is less than 20
             HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
             toDrop.forEach((i, item) -> {
                 Item droppedItem = (Item) cause.getWorld().spawnEntity(cause.getLocation(), EntityType.DROPPED_ITEM);
                 droppedItem.setItemStack(item);
             });
             cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
-            BoxPlugin.instance.getXpManager().addXP(cause, 200);
-            Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 200));
+            BoxPlugin.instance.getXpManager().addXP(cause, 500);
+            Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + 500));
         } else {
-            if(causelevel - targetlevel >= 20) {
+            if(causelevel - targetlevel >= 20) { // difference is greater than 20
                 e.setKeepInventory(true);
                 e.getDrops().clear();
-                target.sendMessage(ChatColor.GRAY + "You kept your items because the player who killed you was a significantly higher level.");
+                for(int i = 0; i < e.getEntity().getInventory().getSize(); i++) {
+                    int rand = (int)(Math.random() * (4) + 1);
+                    if(rand == 1) {
+                        if(e.getEntity().getInventory().getItem(i) != null) {
+                            Item itemDrop = (Item) e.getEntity().getWorld().spawnEntity(e.getEntity().getLocation(), EntityType.DROPPED_ITEM);
+                            itemDrop.setItemStack(e.getEntity().getInventory().getItem(i));
+                            e.getEntity().getInventory().setItem(i, null);
+                        }
+                    }
+                }
+                ArrayList<ItemStack> armor = new ArrayList<>(List.of(e.getEntity().getInventory().getArmorContents()));
+                for(int i = 0; i < e.getEntity().getInventory().getArmorContents().length; i++) {
+                    int rand = (int)(Math.random() * (4) + 1);
+                    if(rand == 1) {
+                        if(e.getEntity().getInventory().getArmorContents()[i] != null) {
+                            Item itemDrop = (Item) e.getEntity().getWorld().spawnEntity(e.getEntity().getLocation(), EntityType.DROPPED_ITEM);
+                            itemDrop.setItemStack(e.getEntity().getInventory().getArmorContents()[i]);
+                            armor.set(i, null);
+                        }
+                    }
+                }
+                e.getEntity().getInventory().setArmorContents(armor.toArray(new ItemStack[4]));
+                target.sendMessage(ChatColor.GRAY + "You kept most of your items, because the player who killed you was a significantly higher level.");
             }
             if(BoxPlugin.instance.getPvpManager().getBounty(target) > 1) {
                 HashMap<Integer, ItemStack> toDrop = cause.getInventory().addItem(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
@@ -345,6 +407,7 @@ public class Listeners implements Listener {
                 cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
             }
         }
+
         BoxPlugin.instance.getPvpManager().registerKill(cause, target); // resets streak here
         BoxPlugin.instance.getScoreboardManager().queueUpdate(cause);
         BoxPlugin.instance.getScoreboardManager().queueUpdate(target);

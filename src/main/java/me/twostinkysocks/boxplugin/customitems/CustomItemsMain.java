@@ -48,6 +48,7 @@ public class CustomItemsMain implements CommandExecutor, TabCompleter {
         registerItem(new SpaceHelmet(this));
         registerItem(new AxeOfTheShredded(this));
         registerItem(new AugmentedRailgun(this));
+//        registerItem(new TalismanOfEnergy(this));
         BoxPlugin.instance.getLogger().info("Loaded custom items!");
     }
 

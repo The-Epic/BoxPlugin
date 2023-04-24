@@ -8,6 +8,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -20,6 +22,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
+import javax.naming.Name;
 import java.util.ArrayList;
 
 public class Listeners implements Listener {
@@ -62,6 +65,23 @@ public class Listeners implements Listener {
             i.getEntityInteract().accept(e);
         }
     }
+
+//    @EventHandler
+//    public void entityDamage(EntityDamageByEntityEvent e) {
+//        if(e.getDamager() instanceof Player) {
+//            Player p = (Player) e.getDamager();
+//            for(ItemStack item : p.getInventory().getContents()) {
+//                // TODO: implement for all items
+//                if(item != null && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "ITEM_ID"), PersistentDataType.STRING) && item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "ITEM_ID"), PersistentDataType.STRING).equals("TALISMAN_OF_ENERGY")) {
+//                    for(CustomItem ci : items) {
+//                        if(ci.getItemId().equals("TALISMAN_OF_ENERGY")) {
+//                            ci.getEntityDamageByEntity().accept(e);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     @EventHandler
     public void armorStandInteract(PlayerArmorStandManipulateEvent e) {

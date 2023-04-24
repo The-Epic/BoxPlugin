@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -33,6 +34,7 @@ public abstract class CustomItem {
     private Consumer<EntityInteractEvent> entityInteract;
     private BiConsumer<PlayerInteractEvent, Action> click;
     private Consumer<EntityTargetEvent> entityTarget;
+    private Consumer<EntityDamageByEntityEvent> entityDamageByEntity;
 
     public CustomItem(String name, String itemId, Material material, CustomItemsMain plugin, String...lore) {
         this.name = name;
@@ -45,6 +47,7 @@ public abstract class CustomItem {
         this.join = p -> {};
         this.entityTarget = e -> {};
         this.entityInteract = e -> {};
+        this.entityDamageByEntity = e -> {};
         this.item = new ItemStack(material);
 
         ItemMeta im = item.getItemMeta();
@@ -83,6 +86,14 @@ public abstract class CustomItem {
 
     public void setEntityInteract(Consumer<EntityInteractEvent> e) {
         this.entityInteract = e;
+    }
+
+    public void setEntityDamageByEntity(Consumer<EntityDamageByEntityEvent> e) {
+        this.entityDamageByEntity = e;
+    }
+
+    public Consumer<EntityDamageByEntityEvent> getEntityDamageByEntity() {
+        return entityDamageByEntity;
     }
 
     public Consumer<EntityInteractEvent> getEntityInteract() {
