@@ -4,16 +4,13 @@ import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
 import com.google.common.collect.Maps;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.twostinkysocks.boxplugin.BoxPlugin;
-import me.twostinkysocks.boxplugin.util.Util;
 import me.twostinkysocks.boxplugin.perks.*;
-import net.minecraft.nbt.MojangsonParser;
-import net.minecraft.nbt.NBTTagCompound;
-import org.bukkit.*;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftEntity;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
+import me.twostinkysocks.boxplugin.util.Util;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -21,9 +18,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-import javax.naming.Name;
-import java.math.BigDecimal;
-import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -80,7 +74,9 @@ public class PerksManager {
         MEGA_SPEED(new MegaPerkSpeed()),
         MEGA_STRENGTH(new MegaPerkStrength()),
         MEGA_RESISTANCE(new MegaPerkResistance()),
-        MEGA_REGENERATION(new MegaPerkRegeneration());
+        MEGA_REGENERATION(new MegaPerkRegeneration()),
+        MEGA_COOLDOWN_REDUCTION(new MegaPerkCooldownReduction()),
+        MEGA_LIFESTEAL(new MegaPerkLifeSteal());
 
         public final AbstractPerk instance;
 
@@ -106,14 +102,15 @@ public class PerksManager {
     }
 
     public void openMainGui(Player p) {
-        ChestGui gui = new ChestGui(6, "Equipped Perks");
+        ChestGui gui = new ChestGui(5, "Equipped Perks");
         gui.setOnGlobalClick(e -> {
             e.setCancelled(true);
         });
-        StaticPane pane = new StaticPane(0, 0, 9, 6);
+        StaticPane pane = new StaticPane(0, 0, 9, 5);
         List<Perk> selectedPerks = getSelectedPerks(p);
         GuiItem perkOne = null;
         GuiItem perkTwo = null;
+        GuiItem perkThree = null;
         // note to self, never write code like this ever again
         if(BoxPlugin.instance.getXpManager().getLevel(p) < 50) {
             if(selectedPerks.size() == 0) {
@@ -179,7 +176,7 @@ public class PerksManager {
                 perkTwo = new GuiItem(itemTwo, e -> {
                     clickPerkSlot(e, 2);
                 });
-            } else if(selectedPerks.size() == 1) {
+            } else if(selectedPerks.size() == 1 && selectedPerks.get(0) != null) {
                 Perk selected = selectedPerks.get(0);
                 ItemStack itemOne = selected.instance.getGuiItem(p).clone();
                 ItemMeta itemOneMeta = itemOne.getItemMeta();
@@ -202,7 +199,7 @@ public class PerksManager {
                 perkTwo = new GuiItem(itemTwo, e -> {
                     clickPerkSlot(e, 2);
                 });
-            } else if(selectedPerks.size() == 2) {
+            } else if(selectedPerks.size() >= 2 && selectedPerks.get(0) != null && selectedPerks.get(1) != null) {
                 Perk selected = selectedPerks.get(0);
                 ItemStack itemOne = selected.instance.getGuiItem(p).clone();
                 ItemMeta itemOneMeta = itemOne.getItemMeta();
@@ -227,25 +224,55 @@ public class PerksManager {
                 });
             }
         }
-
-        assert perkOne != null;
-        assert perkTwo != null;
-
-        pane.addItem(perkOne, 3,2);
-        pane.addItem(perkTwo, 5,2);
-
-        GuiItem megaperk = null;
-
-        if(BoxPlugin.instance.getXpManager().getLevel(p) < 100) {
-            ItemStack item = new ItemStack(Material.BEDROCK);
-            ItemMeta meta = item.getItemMeta();
-            meta.setDisplayName(ChatColor.RED + "Unlocks at level 100");
-            item.setItemMeta(meta);
-            megaperk = new GuiItem(item, e -> {
+        if(BoxPlugin.instance.getXpManager().getLevel(p) < 150) {
+            ItemStack itemThree = new ItemStack(Material.BEDROCK);
+            ItemMeta itemThreeMeta = itemThree.getItemMeta();
+            itemThreeMeta.setDisplayName(ChatColor.RED + "Unlocks at level 150");
+            itemThree.setItemMeta(itemThreeMeta);
+            perkThree = new GuiItem(itemThree, e -> {
                 e.setCancelled(true);
             });
         } else {
-            if(getSelectedMegaPerk(p) == null) { // unlocked but nothing equipped
+            if(selectedPerks.size() < 3) {
+                ItemStack itemThree = new ItemStack(Material.STONE);
+                ItemMeta itemThreeMeta = itemThree.getItemMeta();
+                itemThreeMeta.setDisplayName(ChatColor.GRAY + "Click to change perk");
+                itemThree.setItemMeta(itemThreeMeta);
+                perkThree = new GuiItem(itemThree, e -> {
+                    clickPerkSlot(e, 3);
+                });
+            } else {
+                Perk selected = selectedPerks.get(2);
+                ItemStack itemThree = selected.instance.getGuiItem(p).clone();
+                ItemMeta itemThreeMeta = itemThree.getItemMeta();
+                List<String> newItemThreeLore = itemThreeMeta.getLore() == null ? new ArrayList<>() : itemThreeMeta.getLore();
+                newItemThreeLore.add("");
+                newItemThreeLore.add(ChatColor.GRAY + "Click to change perk");
+                itemThreeMeta.setLore(newItemThreeLore);
+                itemThree.setItemMeta(itemThreeMeta);
+                perkThree = new GuiItem(itemThree, e -> {
+                    clickPerkSlot(e, 3);
+                });
+            }
+        }
+
+        pane.addItem(perkOne, 2,1);
+        pane.addItem(perkTwo, 4,1);
+        pane.addItem(perkThree, 6, 1);
+
+        GuiItem megaperkOne = null;
+        GuiItem megaperkTwo = null;
+
+        if(BoxPlugin.instance.getXpManager().getLevel(p) < 200) {
+            ItemStack item = new ItemStack(Material.BEDROCK);
+            ItemMeta meta = item.getItemMeta();
+            meta.setDisplayName(ChatColor.RED + "Unlocks at level 200");
+            item.setItemMeta(meta);
+            megaperkOne = new GuiItem(item, e -> {
+                e.setCancelled(true);
+            });
+        } else {
+            if(getSelectedMegaPerks(p).size() == 0) { // unlocked but nothing equipped
                 ItemStack item = new ItemStack(Material.STONE);
                 ItemMeta meta = item.getItemMeta();
                 meta.setDisplayName(ChatColor.GRAY + "No Megaperk selected");
@@ -254,11 +281,11 @@ public class PerksManager {
                 newLore.add(ChatColor.GRAY + "Click to change perk");
                 meta.setLore(newLore);
                 item.setItemMeta(meta);
-                megaperk = new GuiItem(item, e -> {
-                    clickMegaPerk(e);
+                megaperkOne = new GuiItem(item, e -> {
+                    clickMegaPerkSlot(e, 1);
                 });
             } else { // unlocked and equipped
-                MegaPerk selected = getSelectedMegaPerk(p);
+                MegaPerk selected = getSelectedMegaPerks(p).get(0);
                 ItemStack item = selected.instance.getGuiItem(p).clone();
                 ItemMeta meta = item.getItemMeta();
                 List<String> newItemTwoLore = meta.getLore() == null ? new ArrayList<>() : meta.getLore();
@@ -266,8 +293,43 @@ public class PerksManager {
                 newItemTwoLore.add(ChatColor.GRAY + "Click to change perk");
                 meta.setLore(newItemTwoLore);
                 item.setItemMeta(meta);
-                megaperk = new GuiItem(item, e -> {
-                    clickMegaPerk(e);
+                megaperkOne = new GuiItem(item, e -> {
+                    clickMegaPerkSlot(e, 1);
+                });
+            }
+        }
+        if(BoxPlugin.instance.getXpManager().getLevel(p) < 300) {
+            ItemStack item = new ItemStack(Material.BEDROCK);
+            ItemMeta meta = item.getItemMeta();
+            meta.setDisplayName(ChatColor.RED + "Unlocks at level 300");
+            item.setItemMeta(meta);
+            megaperkTwo = new GuiItem(item, e -> {
+                e.setCancelled(true);
+            });
+        } else {
+            if(getSelectedMegaPerks(p).size() <= 1) { // unlocked but nothing equipped
+                ItemStack item = new ItemStack(Material.STONE);
+                ItemMeta meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.GRAY + "No Megaperk selected");
+                List<String> newLore = meta.getLore() == null ? new ArrayList<>() : meta.getLore();
+                newLore.add("");
+                newLore.add(ChatColor.GRAY + "Click to change perk");
+                meta.setLore(newLore);
+                item.setItemMeta(meta);
+                megaperkTwo = new GuiItem(item, e -> {
+                    clickMegaPerkSlot(e, 2);
+                });
+            } else { // unlocked and equipped
+                MegaPerk selected = getSelectedMegaPerks(p).get(1);
+                ItemStack item = selected.instance.getGuiItem(p).clone();
+                ItemMeta meta = item.getItemMeta();
+                List<String> newItemTwoLore = meta.getLore() == null ? new ArrayList<>() : meta.getLore();
+                newItemTwoLore.add("");
+                newItemTwoLore.add(ChatColor.GRAY + "Click to change perk");
+                meta.setLore(newItemTwoLore);
+                item.setItemMeta(meta);
+                megaperkTwo = new GuiItem(item, e -> {
+                    clickMegaPerkSlot(e, 2);
                 });
             }
         }
@@ -291,9 +353,9 @@ public class PerksManager {
 
 
 
-        pane.addItem(megaperk, 4, 4);
+        pane.addItem(megaperkOne, 3, 3);
+        pane.addItem(megaperkTwo, 5, 3);
 
-//        pane.addItem(xpUpgradeItem, 5, 3);
 
         gui.addPane(pane);
 
@@ -302,10 +364,16 @@ public class PerksManager {
 
     public void resetPerks(Player p) {
         for(Perk perk : getSelectedPerks(p)) {
-            perk.instance.onUnequip(p);
+            if(perk != null) {
+                perk.instance.onUnequip(p);
+            }
         }
-        if(getSelectedMegaPerk(p) != null) getSelectedMegaPerk(p).instance.onUnequip(p);
-        p.getPersistentDataContainer().remove(new NamespacedKey(BoxPlugin.instance, "selected_megaperk"));
+        for(MegaPerk megaPerk : getSelectedMegaPerks(p)) {
+            if(megaPerk != null) {
+                megaPerk.instance.onUnequip(p);
+            }
+        }
+        p.getPersistentDataContainer().remove(new NamespacedKey(BoxPlugin.instance, "selected_megaperks"));
         p.getPersistentDataContainer().remove(new NamespacedKey(BoxPlugin.instance, "selected_perks"));
         for(MegaPerk perk: MegaPerk.values()) {
             if(p.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, perk.instance.getKey()), PersistentDataType.INTEGER)) {
@@ -322,7 +390,7 @@ public class PerksManager {
         }
     }
 
-    public void openMegaPerkBuyGui(Player p) {
+    public void openMegaPerkBuyGui(Player p, int slot) {
         ChestGui gui = new ChestGui(6, "Available Megaperks");
         gui.setOnGlobalClick(e -> {
             e.setCancelled(true);
@@ -349,15 +417,19 @@ public class PerksManager {
             visualItem.setItemMeta(meta);
             GuiItem item = new GuiItem(visualItem, e -> {
                 e.setCancelled(true);
-                MegaPerk selectedPerk = getSelectedMegaPerk(p);
-                if(selectedPerk == perk) {
+                List<MegaPerk> selectedPerks = getSelectedMegaPerks(p);
+                if(selectedPerks.contains(perk)) {
                     p.playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 0.25f, 0.5f);
                     p.sendMessage(ChatColor.RED + "You already have this megaperk equipped!");
                     return;
                 }
                 if(ownsMegaPerk(p, perk)) {
-                    selectedPerk = perk;
-                    setSelectedMegaPerk(p, selectedPerk);
+                    if(selectedPerks.size() < slot) {
+                        selectedPerks.add(perk);
+                    } else {
+                        selectedPerks.set(slot-1, perk);
+                    }
+                    setSelectedMegaPerks(p, selectedPerks);
                     p.sendMessage(ChatColor.GREEN + "Equipped megaperk!");
                     p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, 2f);
                     openMainGui(p);
@@ -366,8 +438,12 @@ public class PerksManager {
                     boolean canBuy = buyMegaPerk(perk, p);
                     if(canBuy) {
                         addMegaPerk(p, perk);
-                        selectedPerk = perk;
-                        setSelectedMegaPerk(p, selectedPerk);
+                        if(selectedPerks.size() < slot) {
+                            selectedPerks.add(perk);
+                        } else {
+                            selectedPerks.set(slot-1, perk);
+                        }
+                        setSelectedMegaPerks(p, selectedPerks);
                         p.sendMessage(ChatColor.GREEN + "Bought megaperk!");
                         p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, 2f);
                         openMainGui(p);
@@ -377,8 +453,8 @@ public class PerksManager {
                     }
                 }
             });
-            if(j >= 2) {
-                pane.addItem(item, j+3, 2);
+            if (j <= 2) {
+                pane.addItem(item, j+1, 2);
             } else {
                 pane.addItem(item, j+2, 2);
             }
@@ -399,9 +475,22 @@ public class PerksManager {
             unequip.setItemMeta(unequipMeta);
             pane.addItem(new GuiItem(unequip, e -> {
                 e.setCancelled(true);
-                setSelectedMegaPerk(p, null);
-                p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, 2f);
-                openMainGui(p);
+                if(getSelectedMegaPerks(p).size() != 0) {
+                    List<MegaPerk> currentPerks = getSelectedMegaPerks(p);
+                    try{
+                        currentPerks.remove(slot-1);
+                        setSelectedMegaPerks(p, currentPerks);
+                        p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, 2f);
+                        openMainGui(p);
+                    } catch (IndexOutOfBoundsException ex) {
+                        p.playSound(p.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, 1f, 1f);
+                        p.sendMessage(ChatColor.RED + "You don't have a perk equipped in this slot!");
+                    }
+
+                } else {
+                    p.playSound(p.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, 1f, 1f);
+                    p.sendMessage(ChatColor.RED + "You don't have a perk equipped in this slot!");
+                }
             }), 4, 4);
 
             gui.addPane(pane);
@@ -589,11 +678,11 @@ public class PerksManager {
         openPerkBuyGui(p, slot);
     }
 
-    public void clickMegaPerk(InventoryClickEvent e) {
+    public void clickMegaPerkSlot(InventoryClickEvent e, int slot) {
         Player p = (Player) e.getWhoClicked();
         p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, 2f);
         e.setCancelled(true);
-        openMegaPerkBuyGui(p);
+        openMegaPerkBuyGui(p, slot);
     }
 
     /**
@@ -692,15 +781,21 @@ public class PerksManager {
         }
     }
 
-    public void setSelectedMegaPerk(Player p, MegaPerk perk) {
-        MegaPerk prevPerk = getSelectedMegaPerk(p);
-        if(perk != null) {
-            perk.instance.onEquip(p);
-            p.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "selected_megaperk"), PersistentDataType.STRING, perk.instance.getKey());
+    public void setSelectedMegaPerks(Player p, List<MegaPerk> perks) {
+        List<MegaPerk> prevPerks = getSelectedMegaPerks(p);
+        if(perks.size() == 0) {
+            p.getPersistentDataContainer().remove(new NamespacedKey(BoxPlugin.instance, "selected_megaperks"));
         } else {
-            p.getPersistentDataContainer().remove(new NamespacedKey(BoxPlugin.instance, "selected_megaperk"));
+            p.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "selected_megaperks"), PersistentDataType.STRING, String.join("\n", perks.stream().map(pe -> pe.instance.getKey()).collect(Collectors.toList())));
         }
-        if(prevPerk != null) prevPerk.instance.onUnequip(p);
+        for(MegaPerk perk : perks) {
+            perk.instance.onEquip(p);
+        }
+        for(MegaPerk perk : prevPerks) { // todo test
+            if(!perks.contains(perk)) {
+                perk.instance.onUnequip(p);
+            }
+        }
     }
 
 
@@ -735,12 +830,16 @@ public class PerksManager {
         }
     }
 
-    public MegaPerk getSelectedMegaPerk(Player p) {
-        if(!p.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "selected_megaperk"), PersistentDataType.STRING)) {
-            return null;
+    // stored as list of perks separated by \n, inside one string "selected_megaperks"
+    public ArrayList<MegaPerk> getSelectedMegaPerks(Player p) {
+        if(!p.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "selected_megaperks"), PersistentDataType.STRING)) {
+            return new ArrayList<>();
         } else {
-            return MegaPerk.getByName(p.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "selected_megaperk"), PersistentDataType.STRING));
+            List<MegaPerk> l = Arrays.stream(p.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "selected_megaperks"), PersistentDataType.STRING).split("\n")).map(s -> MegaPerk.getByName(s)).collect(Collectors.toList());
+            ArrayList<MegaPerk> newList = new ArrayList<>(l);
+            return newList;
         }
     }
+
 
 }

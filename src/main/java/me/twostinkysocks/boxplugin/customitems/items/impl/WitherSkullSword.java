@@ -1,7 +1,9 @@
 package me.twostinkysocks.boxplugin.customitems.items.impl;
 
+import me.twostinkysocks.boxplugin.BoxPlugin;
 import me.twostinkysocks.boxplugin.customitems.CustomItemsMain;
 import me.twostinkysocks.boxplugin.customitems.items.CustomItem;
+import me.twostinkysocks.boxplugin.manager.PerksManager;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
@@ -32,7 +34,7 @@ public class WitherSkullSword extends CustomItem {
             Player p = e.getPlayer();
             if(a == Action.RIGHT_CLICK_AIR || a == Action.RIGHT_CLICK_BLOCK) {
                 if(p.hasPermission("customitems.cooldownbypass") || !cooldown.containsKey(p.getUniqueId()) || cooldown.get(p.getUniqueId()) < System.currentTimeMillis()) {
-                    cooldown.put(p.getUniqueId(), System.currentTimeMillis() + 9000); // 9 seconds
+                    cooldown.put(p.getUniqueId(), System.currentTimeMillis() + (long)(9000 * (BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_COOLDOWN_REDUCTION) ? 0.5 : 1))); // 9 seconds
                     //
                     WitherSkull skull = (WitherSkull) p.getWorld().spawnEntity(p.getLocation().add(0, 1, 0), EntityType.WITHER_SKULL);
                     skull.setCharged(true);

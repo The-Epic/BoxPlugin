@@ -1,10 +1,12 @@
 package me.twostinkysocks.boxplugin.event;
 
 import me.twostinkysocks.boxplugin.BoxPlugin;
+import me.twostinkysocks.boxplugin.manager.PerksManager;
 import me.twostinkysocks.boxplugin.perks.PerkXPBoost;
 import me.twostinkysocks.boxplugin.util.Util;
 import me.twostinkysocks.boxplugin.manager.PerksManager.Perk;
 import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.craftbukkit.v1_19_R1.entity.CraftCreature;
 import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryPlayer;
@@ -15,10 +17,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.entity.SlimeSplitEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.inventory.*;
@@ -91,6 +90,14 @@ public class Listeners implements Listener {
 
     @EventHandler
     public void entityDamage(EntityDamageByEntityEvent e) {
+        if(e.getDamager() instanceof Player && (e.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK || e.getCause() == EntityDamageEvent.DamageCause.ENTITY_SWEEP_ATTACK)) {
+            System.out.println("correct dmg type");
+            Player p = (Player) e.getDamager();
+            if(BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_LIFESTEAL)) {
+                System.out.println("healing");
+                p.setHealth(Math.min(p.getHealth() + (e.getFinalDamage() * 0.1), p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()));
+            }
+        }
         if(e.getDamager() instanceof WitherSkull && !(e.getEntity() instanceof HumanEntity) && !(e.getEntity() instanceof Mob)) {
             e.setCancelled(true);
         }
@@ -114,7 +121,9 @@ public class Listeners implements Listener {
     public void onJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
         for(Perk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(p)) {
-            perk.instance.onEquip(p);
+            if(perk != null) {
+                perk.instance.onEquip(p);
+            }
         }
         if(p.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.DOUBLE)) {
             p.getPersistentDataContainer().remove(new NamespacedKey(BoxPlugin.instance, "xp"));
@@ -276,10 +285,13 @@ public class Listeners implements Listener {
         Player p = e.getPlayer();
 
         Bukkit.getScheduler().runTaskLater(BoxPlugin.instance, () -> {
-            for(Perk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(p)) {
-                perk.instance.onRespawn(e);
-            }
-            if(BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(p) != null) BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(p).instance.onRespawn(e);        }, 1L);
+                for(Perk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(p)) {
+                    if(perk != null) perk.instance.onRespawn(e);
+                }
+                for(PerksManager.MegaPerk perk : BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p)) {
+                    if(perk != null) perk.instance.onRespawn(e);
+                }
+            }, 1L);
     }
 
     @EventHandler
@@ -291,9 +303,11 @@ public class Listeners implements Listener {
         Player target = e.getEntity();
 
         for(Perk perk : BoxPlugin.instance.getPerksManager().getSelectedPerks(target)) {
-            perk.instance.onDeath(e);
+            if(perk != null) perk.instance.onDeath(e);
         }
-        if(BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(target) != null) BoxPlugin.instance.getPerksManager().getSelectedMegaPerk(target).instance.onDeath(e);
+        for(PerksManager.MegaPerk perk : BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(target)) {
+            if(perk != null) perk.instance.onDeath(e);
+        }
 
         if(cause == null) {
             BoxPlugin.instance.getPvpManager().resetStreak(target);

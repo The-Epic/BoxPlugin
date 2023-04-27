@@ -3,6 +3,7 @@ package me.twostinkysocks.boxplugin.customitems.items.impl;
 import me.twostinkysocks.boxplugin.BoxPlugin;
 import me.twostinkysocks.boxplugin.customitems.CustomItemsMain;
 import me.twostinkysocks.boxplugin.customitems.items.CustomItem;
+import me.twostinkysocks.boxplugin.manager.PerksManager;
 import me.twostinkysocks.boxplugin.util.Laser;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -58,7 +59,7 @@ public class TalismanOfEnergy extends CustomItem {
         setEntityDamageByEntity(e -> {
             Player p = (Player) e.getDamager();
             if(p.hasPermission("customitems.cooldownbypass") || !cooldown.containsKey(p.getUniqueId()) || cooldown.get(p.getUniqueId()) < System.currentTimeMillis()) {
-                cooldown.put(p.getUniqueId(), System.currentTimeMillis() + 10000); // 10 seconds
+                cooldown.put(p.getUniqueId(), System.currentTimeMillis() + (long)(10000 * (BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_COOLDOWN_REDUCTION) ? 0.5 : 1))); // 10 seconds
                 logic(e, p);
             }
         });

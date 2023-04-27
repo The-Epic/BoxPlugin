@@ -3,6 +3,7 @@ package me.twostinkysocks.boxplugin.customitems.items.impl;
 import me.twostinkysocks.boxplugin.BoxPlugin;
 import me.twostinkysocks.boxplugin.customitems.CustomItemsMain;
 import me.twostinkysocks.boxplugin.customitems.items.CustomItem;
+import me.twostinkysocks.boxplugin.manager.PerksManager;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.entity.EntityLiving;
 import net.minecraft.world.entity.EntityTypes;
@@ -68,7 +69,7 @@ public class AxeOfTheShredded extends CustomItem {
             Player p = e.getPlayer();
             if(a == Action.RIGHT_CLICK_AIR || a == Action.RIGHT_CLICK_BLOCK) {
                 if(p.hasPermission("customitems.cooldownbypass") || !cooldown.containsKey(p.getUniqueId()) || cooldown.get(p.getUniqueId()) < System.currentTimeMillis()) {
-                    cooldown.put(p.getUniqueId(), System.currentTimeMillis() + 750);
+                    cooldown.put(p.getUniqueId(), System.currentTimeMillis() + (long)(750 * (BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_COOLDOWN_REDUCTION) ? 0.5 : 1)));
                     spawnAxe(p);
                 }
             }

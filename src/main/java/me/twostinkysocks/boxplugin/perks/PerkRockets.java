@@ -18,6 +18,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PerkRockets extends AbstractPerk {
@@ -49,7 +50,7 @@ public class PerkRockets extends AbstractPerk {
 
     @Override
     public void onDeath(PlayerDeathEvent e) {
-        for(ItemStack item : e.getDrops()) {
+        for(ItemStack item : new ArrayList<>(e.getDrops())) {
             if(item.getType() == Material.FIREWORK_ROCKET && item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) && item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) == 1) {
                 e.getDrops().remove(item);
             }

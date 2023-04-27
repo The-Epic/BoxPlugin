@@ -14,6 +14,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import javax.naming.Name;
+import java.util.ArrayList;
 import java.util.List;
 
 public class PerkObsidian extends AbstractPerk {
@@ -44,7 +45,7 @@ public class PerkObsidian extends AbstractPerk {
 
     @Override
     public void onDeath(PlayerDeathEvent e) {
-        for(ItemStack item : e.getDrops()) {
+        for(ItemStack item : new ArrayList<>(e.getDrops())) {
             if(item.getType() == Material.OBSIDIAN && item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) && item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "perk_item"), PersistentDataType.INTEGER) == 1) {
                 e.getDrops().remove(item);
             }

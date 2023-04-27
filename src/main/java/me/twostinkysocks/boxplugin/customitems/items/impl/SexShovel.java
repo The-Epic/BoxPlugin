@@ -1,7 +1,9 @@
 package me.twostinkysocks.boxplugin.customitems.items.impl;
 
+import me.twostinkysocks.boxplugin.BoxPlugin;
 import me.twostinkysocks.boxplugin.customitems.CustomItemsMain;
 import me.twostinkysocks.boxplugin.customitems.items.CustomItem;
+import me.twostinkysocks.boxplugin.manager.PerksManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -37,7 +39,7 @@ public class SexShovel extends CustomItem {
             Player p = e.getPlayer();
             if(a == Action.RIGHT_CLICK_AIR || a == Action.RIGHT_CLICK_BLOCK) {
                 if(p.hasPermission("customitems.cooldownbypass") || !cooldown.containsKey(p.getUniqueId()) || cooldown.get(p.getUniqueId()) < System.currentTimeMillis()) {
-                    cooldown.put(p.getUniqueId(), System.currentTimeMillis() + 10000); // 10 seconds
+                    cooldown.put(p.getUniqueId(), System.currentTimeMillis() + (long)(10000 * (BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_COOLDOWN_REDUCTION) ? 0.5 : 1))); // 10 seconds
                     CraftPlayer craftPlayer = (CraftPlayer) p;
                     List<Block> lineOfSight = new ArrayList<>(craftPlayer.getLineOfSight(Set.of(Material.AIR, Material.CAVE_AIR, Material.WATER, Material.LAVA), 10));
                     Location tpLocation = null;
