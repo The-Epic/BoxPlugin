@@ -1,13 +1,14 @@
 package me.twostinkysocks.boxplugin.manager;
 
+import fr.skytasul.quests.api.QuestsAPI;
+import fr.skytasul.quests.players.PlayerAccount;
+import fr.skytasul.quests.players.PlayersManager;
 import me.twostinkysocks.boxplugin.BoxPlugin;
+import me.twostinkysocks.boxplugin.util.Util;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Score;
-import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,8 +47,7 @@ public class ScoreboardManager {
 
 
     public void updatePlayerScoreboard(Player p) {
-
-        List<String> list = Objects.requireNonNull(BoxPlugin.instance.getConfig().getList("scoreboard")).stream().map(s -> ChatColor.translateAlternateColorCodes('&', (String) s)).collect(Collectors.toList());
+        List<String> list = Objects.requireNonNull(BoxPlugin.instance.getConfig().getList("scoreboard")).stream().map(s -> Util.colorize((String) s)).collect(Collectors.toList());
 
         org.bukkit.scoreboard.ScoreboardManager manager = Bukkit.getScoreboardManager();
         assert manager != null;
@@ -56,15 +56,14 @@ public class ScoreboardManager {
         Objective objective = scoreboard.registerNewObjective("scoreboard", "dummy", list.remove(0));
 
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
-        List<Score> scores = new ArrayList<>();
 
         for(int i = 0; i < list.size(); i++) {
-            Score score = objective.getScore(ChatColor.translateAlternateColorCodes(
-                    '&',
-                    list.get(i).replaceAll("%level%", "" + BoxPlugin.instance.getXpManager().getLevel(p)).replaceAll("%needed-xp%","" + BoxPlugin.instance.getXpManager().getNeededXp(p)).replaceAll("%streak%", "" + BoxPlugin.instance.getPvpManager().getStreak(p)).replaceAll("%bounty%", "" + BoxPlugin.instance.getPvpManager().getBounty(p))
-            ));
-            scores.add(score);
-            score.setScore(list.size()-i-1);
+            String emptyName = new String(new char[i+1]).replace("\0", "§r");
+            Team team = scoreboard.registerNewTeam(emptyName);
+            String text = Util.colorize(list.get(i).replaceAll("%level%", "" + BoxPlugin.instance.getXpManager().getLevel(p)).replaceAll("%needed-xp%","" + BoxPlugin.instance.getXpManager().getNeededXp(p)).replaceAll("%streak%", "" + BoxPlugin.instance.getPvpManager().getStreak(p)).replaceAll("%bounty%", "" + BoxPlugin.instance.getPvpManager().getBounty(p)));
+            team.setSuffix(text);
+            team.addEntry(emptyName);
+            objective.getScore(emptyName).setScore(list.size()-i);
         }
         p.setScoreboard(scoreboard);
     }

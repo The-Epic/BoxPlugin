@@ -13,8 +13,11 @@ import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
+import io.lumine.mythic.bukkit.MythicBukkit;
+import io.lumine.mythic.core.mobs.ActiveMob;
 import me.twostinkysocks.boxplugin.BoxPlugin;
 import me.twostinkysocks.boxplugin.event.PlayerBoxXpUpdateEvent;
+import me.twostinkysocks.boxplugin.util.MythicMobsIntegration;
 import net.minecraft.nbt.MojangsonParser;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.entity.EntityInsentient;
@@ -45,6 +48,7 @@ import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.StringUtil;
 import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -74,6 +78,8 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
         spawnedEntities = new HashMap<String, ArrayList<UUID>>();
         BoxPlugin.instance.getCommand("terrainregenerator").setExecutor(this);
         BoxPlugin.instance.getCommand("terrainregenerator").setTabCompleter(this);
+        BoxPlugin.instance.getCommand("regenschematic").setExecutor(this);
+        BoxPlugin.instance.getCommand("regenschematic").setTabCompleter(this);
         BoxPlugin.instance.getServer().getPluginManager().registerEvents(this, BoxPlugin.instance);
         this.load();
     }
@@ -132,16 +138,20 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
         for(Object entity : this.config.getConfigurationSection("entities").getKeys(false).toArray()) {
             int timerseconds = this.config.getInt("entities." + entity + ".timer-seconds");
             try {
-                NBTTagCompound nbt = MojangsonParser.a(this.config.getString("entities." + entity + ".nbt"));
+                NBTTagCompound nbt = null;
+                if(!this.config.isSet("entities." + entity + ".isMythic") || !this.config.getBoolean("entities." + entity + ".isMythic")) {
+                    nbt = MojangsonParser.a(this.config.getString("entities." + entity + ".nbt"));
+                }
                 EntityType entityType = EntityType.fromName(this.config.getString("entities." + entity + ".type"));
                 int x = this.config.getInt("entities." + entity + ".x");
                 int y = this.config.getInt("entities." + entity + ".y");
                 int z = this.config.getInt("entities." + entity + ".z");
 //                System.out.println("Entity " + entity + " located at " + x + " " + y + " " + z);
+                NBTTagCompound finalNbt = nbt;
                 tasks.add(Bukkit.getScheduler()
                         .runTaskTimer(
                                 BoxPlugin.instance,
-                                () -> this.spawnEntity((String) entity, entityType, nbt, x, y, z),
+                                () -> this.spawnEntity((String) entity, entityType, finalNbt, x, y, z),
                                 timerseconds * 20,
                                 timerseconds * 20
                         ));
@@ -205,25 +215,25 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
                                 }
                             }
                         }
-                        if(this.config.isSet("entities." + name + ".teleporting") && this.config.getBoolean("entities." + name + ".teleporting")) {
-                            if(entity instanceof CraftCreature) {
-                                List<Entity> nearby = entity.getNearbyEntities(5, 30, 5);
-                                List<Player> nearbyPlayers = nearby.stream().filter(e -> {
-                                    return e instanceof Player && (((Player)e).getGameMode() == GameMode.ADVENTURE || ((Player)e).getGameMode() == GameMode.SURVIVAL);
-                                }).map(e -> (Player)e).collect(Collectors.toList());
-                                if(nearbyPlayers.size() > 0) {
-                                    Player nearest = nearbyPlayers.get(0);
-                                    for(Player nearbyEntity : nearbyPlayers) {
-                                        if(nearbyEntity.getLocation().distance(entity.getLocation()) < nearest.getLocation().distance(entity.getLocation())) {
-                                            nearest = nearbyEntity;
-                                        }
-                                    }
-                                    CraftCreature creature = (CraftCreature) entity;
-                                    creature.teleport(nearest.getLocation());
-                                    nearest.getWorld().playSound(nearest.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
-                                }
-                            }
-                        }
+//                        if(this.config.isSet("entities." + name + ".teleporting") && this.config.getBoolean("entities." + name + ".teleporting")) {
+//                            if(entity instanceof CraftCreature) {
+//                                List<Entity> nearby = entity.getNearbyEntities(5, 30, 5);
+//                                List<Player> nearbyPlayers = nearby.stream().filter(e -> {
+//                                    return e instanceof Player && (((Player)e).getGameMode() == GameMode.ADVENTURE || ((Player)e).getGameMode() == GameMode.SURVIVAL);
+//                                }).map(e -> (Player)e).collect(Collectors.toList());
+//                                if(nearbyPlayers.size() > 0) {
+//                                    Player nearest = nearbyPlayers.get(0);
+//                                    for(Player nearbyEntity : nearbyPlayers) {
+//                                        if(nearbyEntity.getLocation().distance(entity.getLocation()) < nearest.getLocation().distance(entity.getLocation())) {
+//                                            nearest = nearbyEntity;
+//                                        }
+//                                    }
+//                                    CraftCreature creature = (CraftCreature) entity;
+//                                    creature.teleport(nearest.getLocation());
+//                                    nearest.getWorld().playSound(nearest.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
+//                                }
+//                            }
+//                        }
                     }
                 }
             }
@@ -236,7 +246,12 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
         if(spawnedEntities.containsKey(name) && this.config.getBoolean("entities." + name + ".kill-existing")) {
             for(UUID uuid : new ArrayList<>(spawnedEntities.get(name))) {
                 if(Bukkit.getEntity(uuid) != null) {
-//                    System.out.println("Removing " + uuid);
+                    if(this.config.isSet("entities." + name + ".isMythic") && this.config.getBoolean("entities." + name + ".isMythic")) {
+                        // reduce memory usage hopefully
+                        ActiveMob am = ((MythicBukkit)Bukkit.getPluginManager().getPlugin("MythicMobs")).getMobManager().getMythicMobInstance(Bukkit.getEntity(uuid));
+                        ((MythicBukkit)Bukkit.getPluginManager().getPlugin("MythicMobs")).getMobManager().unregisterActiveMob(am);
+                        am.setDespawned();
+                    }
                     Bukkit.getEntity(uuid).remove();
                     spawnedEntities.get(name).remove(uuid);
                 }
@@ -244,18 +259,27 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
         }
         Location loc = new Location(Bukkit.getWorld(this.config.getString("entities." + name + ".world")), x, y, z);
         for(int i = 0; i < this.config.getInt("entities." + name + ".count"); i++) {
-            CraftEntity e = (CraftEntity) Bukkit.getWorld(this.config.getString("entities." + name + ".world")).spawnEntity(loc, entityType);
-            if(!spawnedEntities.containsKey(name) && this.config.getBoolean("entities." + name + ".kill-existing")) {
-                spawnedEntities.put(name, new ArrayList<>());
+            if(this.config.isSet("entities." + name + ".isMythic") && this.config.getBoolean("entities." + name + ".isMythic")) {
+                int xp = this.config.isSet("entities." + name + ".xp") ? this.config.getInt("entities." + name + ".xp") : 0;
+                UUID uuid = MythicMobsIntegration.spawnWithData(name, xp, loc);
+                if(!spawnedEntities.containsKey(name) && this.config.getBoolean("entities." + name + ".kill-existing")) {
+                    spawnedEntities.put(name, new ArrayList<>());
+                }
+                spawnedEntities.get(name).add(uuid);
+            } else {
+                CraftEntity e = (CraftEntity) Bukkit.getWorld(this.config.getString("entities." + name + ".world")).spawnEntity(loc, entityType);
+                if(!spawnedEntities.containsKey(name) && this.config.getBoolean("entities." + name + ".kill-existing")) {
+                    spawnedEntities.put(name, new ArrayList<>());
+                }
+                spawnedEntities.get(name).add(e.getUniqueId());
+                if(this.config.getInt("entities." + name + ".xp") != 0) {
+                    e.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER, this.config.getInt("entities." + name + ".xp"));
+                }
+                e.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "respawningmob"), PersistentDataType.INTEGER, 1);
+                e.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING, name);
+                if(nbt != null) e.getHandle().g(nbt); // Entity#load()
+                e.teleport(loc); // loading nbt resets loc to 0
             }
-            spawnedEntities.get(name).add(e.getUniqueId());
-            if(this.config.getInt("entities." + name + ".xp") != 0) {
-                e.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER, this.config.getInt("entities." + name + ".xp"));
-            }
-            e.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "respawningmob"), PersistentDataType.INTEGER, 1);
-            e.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING, name);
-            e.getHandle().g(nbt); // Entity#load()
-            e.teleport(loc); // loading nbt resets loc to 0
         }
         if(this.config.getString("entities." + name + ".respawn-broadcast") != null) {
             Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', this.config.getString("entities." + name + ".respawn-broadcast")));
@@ -303,29 +327,29 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
         }
     }
 
-    @EventHandler
-    public void onDamage(EntityDamageByEntityEvent e) {
-        Entity entity = e.getEntity();
-        if(entity.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING)) {
-            String name = entity.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING);
-            if(e.getEntity() instanceof CraftCreature && this.config.isSet("entities." + name + ".teleporting")) {
-                int rand = (int)(Math.random() * (10) + 1);
-                if(rand == 1) {
-                    Player p = null;
-                    if((e.getDamager() instanceof Projectile && ((Projectile)e.getDamager()).getShooter() instanceof Player)) {
-                        p = (Player) ((Projectile)e.getDamager()).getShooter();
-                    } else if(e.getDamager() instanceof Player) {
-                        p = (Player) e.getDamager();
-                    }
-                    if(p != null) {
-                        CraftCreature creature = (CraftCreature) e.getEntity();
-                        creature.teleport(p.getLocation());
-                        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
-                    }
-                }
-            }
-        }
-    }
+//    @EventHandler
+//    public void onDamage(EntityDamageByEntityEvent e) {
+//        Entity entity = e.getEntity();
+//        if(entity.getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING)) {
+//            String name = entity.getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING);
+//            if(e.getEntity() instanceof CraftCreature && this.config.isSet("entities." + name + ".teleporting")) {
+//                int rand = (int)(Math.random() * (10) + 1);
+//                if(rand == 1) {
+//                    Player p = null;
+//                    if((e.getDamager() instanceof Projectile && ((Projectile)e.getDamager()).getShooter() instanceof Player)) {
+//                        p = (Player) ((Projectile)e.getDamager()).getShooter();
+//                    } else if(e.getDamager() instanceof Player) {
+//                        p = (Player) e.getDamager();
+//                    }
+//                    if(p != null) {
+//                        CraftCreature creature = (CraftCreature) e.getEntity();
+//                        creature.teleport(p.getLocation());
+//                        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
@@ -339,6 +363,18 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
                     p.sendMessage("Reloaded " + num + " schematics!");
                 }
                 return true;
+            } else if(label.equals("regenschematic")) {
+                if(!p.hasPermission("terrainregenerator.regenschematic")) {
+                    p.sendMessage(ChatColor.RED + "You don't have permission!");
+                    return true;
+                }
+                if(args.length == 0 || !this.config.contains("schematics." + args[0])) {
+                    p.sendMessage(ChatColor.RED + "Invalid schematic name");
+                    return true;
+                }
+                File schemFile = new File(BoxPlugin.instance.getDataFolder(), "schematics/" + args[0] + ".schem");
+                p.sendMessage(ChatColor.AQUA + "Manually regenerating schematic...");
+                this.regenerateNew(schemFile);
             }
         }
         return true;
@@ -379,6 +415,15 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
     @Nullable
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
-        return List.of("reload");
+        List<String> completions = new ArrayList<>();
+        if(alias.equals("terrainregenerator")) {
+            return List.of("reload");
+        } else if(alias.equals("regenschematic")) {
+            if(args.length == 1) {
+                StringUtil.copyPartialMatches(args[0], this.config.getConfigurationSection("schematics").getKeys(false), completions);
+                return completions;
+            }
+        }
+        return List.of();
     }
 }

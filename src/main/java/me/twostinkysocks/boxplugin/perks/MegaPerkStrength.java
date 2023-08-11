@@ -24,7 +24,7 @@ public class MegaPerkStrength extends AbstractPerk {
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS);
         meta.setLore(List.of(
                 "",
-                ChatColor.GRAY + "Gain permanent Strength VI"
+                ChatColor.GRAY + "Gain permanent Strength IV"
         ));
         guiItem.setItemMeta(meta);
 
@@ -38,7 +38,7 @@ public class MegaPerkStrength extends AbstractPerk {
     @Override
     public void onRespawn(PlayerRespawnEvent e) {
         Player p = e.getPlayer();
-        p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, 5, true, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, 3, true, false));
     }
 
     @Override
@@ -48,7 +48,7 @@ public class MegaPerkStrength extends AbstractPerk {
 
     @Override
     public void onEquip(Player p) {
-        p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, 5, true, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, 3, true, false));
     }
 
     @Override

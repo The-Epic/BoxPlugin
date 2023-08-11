@@ -1,18 +1,21 @@
 package me.twostinkysocks.boxplugin.customitems.items.impl;
 
+import com.google.common.base.Preconditions;
 import me.twostinkysocks.boxplugin.BoxPlugin;
 import me.twostinkysocks.boxplugin.customitems.CustomItemsMain;
 import me.twostinkysocks.boxplugin.customitems.items.CustomItem;
 import me.twostinkysocks.boxplugin.manager.PerksManager;
 import me.twostinkysocks.boxplugin.util.Laser;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.EntityLiving;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
-import org.bukkit.entity.Damageable;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
+import org.bukkit.craftbukkit.v1_19_R1.entity.*;
+import org.bukkit.entity.*;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.weather.LightningStrikeEvent;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -48,8 +51,8 @@ public class TalismanOfEnergy extends CustomItem {
                 plugin,
                 "",
                 "§6Item Ability: Electrocute",
-                "§7Hitting an enemy 3 times within 5 seconds electrocutes them,",
-                "§7striking them again with 1/2 of your average damage per hit",
+                "§7Landing 3 hits within 3 seconds makes your last hit strike twice,",
+                "§7dealing 1/2 the average damage per hit",
                 "§7over the duration",
                 "§8Cooldown: §a10s"
         );
@@ -59,16 +62,21 @@ public class TalismanOfEnergy extends CustomItem {
         setEntityDamageByEntity(e -> {
             Player p = (Player) e.getDamager();
             if(p.hasPermission("customitems.cooldownbypass") || !cooldown.containsKey(p.getUniqueId()) || cooldown.get(p.getUniqueId()) < System.currentTimeMillis()) {
-                cooldown.put(p.getUniqueId(), System.currentTimeMillis() + (long)(10000 * (BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_COOLDOWN_REDUCTION) ? 0.5 : 1))); // 10 seconds
                 logic(e, p);
             }
         });
     }
 
     private void electrocute(long avg, EntityDamageByEntityEvent e) {
-        if(e.getEntity() instanceof Damageable) {
-            Damageable d = (Damageable) e.getEntity();
-            d.damage(avg/2.0, e.getDamager());
+        if(e.getEntity() instanceof CraftLivingEntity) {
+            EntityLiving nmsEntity = ((CraftLivingEntity) e.getEntity()).getHandle();
+            Preconditions.checkState(!nmsEntity.generation, "Cannot damage entity during world generation");
+            DamageSource reason = DamageSource.a(((CraftHumanEntity)e.getDamager()).getHandle()); // DamageSource.playerAttack()
+            nmsEntity.W = 0; // set no damage ticks to 0
+//            System.out.println(avg);
+            nmsEntity.a(reason, (float)avg);
+            Player p = (Player) e.getDamager();
+            cooldown.put(p.getUniqueId(), System.currentTimeMillis() + (long)(10000 * (BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_COOLDOWN_REDUCTION) ? 0.5 : 1))); // 10 seconds
             playEffects(e);
         }
     }
@@ -104,30 +112,34 @@ public class TalismanOfEnergy extends CustomItem {
     private void logic(EntityDamageByEntityEvent e, Player p) {
         if(!hits.containsKey(p.getUniqueId())) {
             ArrayList<Hit> list = new ArrayList<>();
-            list.add(new Hit(e.getDamage(), System.currentTimeMillis()));
             hits.put(p.getUniqueId(), list);
-        } else {
-            ArrayList<Hit> pHits = hits.get(p.getUniqueId());
-            if(pHits.size() >= 3) {
-                long min = Long.MAX_VALUE;
-                long max = Long.MIN_VALUE;
-                long avg = 0;
-                for(Hit hit : pHits) {
-                    if(hit.getTimestamp() < min) min = hit.getTimestamp();
-                    if(hit.getTimestamp() > max) max = hit.getTimestamp();
-                    avg += hit.getDamage();
-                }
-                avg /= ((double) pHits.size());
-                long diff = max - min;
-                if(diff < 5000) { // should electrocute
-                    electrocute(avg, e);
-                    hits.get(p.getUniqueId()).clear();
-                } else {
-                    //              first element
-                    pHits.remove(0);
-                }
-            }
-            pHits.add(new Hit(e.getDamage(), System.currentTimeMillis()));
         }
+        ArrayList<Hit> pHits = hits.get(p.getUniqueId());
+        if(pHits.size() >= 2) {
+            long min = Long.MAX_VALUE;
+            long max = Long.MIN_VALUE;
+            long avg = 0;
+            for(Hit hit : pHits) {
+//                System.out.println(hit.getTimestamp());
+                if(hit.getTimestamp() < min) min = hit.getTimestamp();
+                if(hit.getTimestamp() > max) max = hit.getTimestamp();
+                avg += hit.getDamage();
+            }
+            avg /= ((double) pHits.size());
+            long diff = max - min;
+//            System.out.println(diff);
+            if(diff < 3000) { // should electrocute
+                long finalAvg = avg;
+                Bukkit.getScheduler().runTaskLater(BoxPlugin.instance, () -> {
+                    electrocute(finalAvg, e);
+                    hits.remove(p.getUniqueId());
+                }, 10L);
+            } else {
+                //              first element
+                pHits.remove(0);
+            }
+        }
+        pHits.add(new Hit(e.getDamage(), System.currentTimeMillis()));
+
     }
 }

@@ -5,6 +5,8 @@ import me.twostinkysocks.boxplugin.customitems.CustomItemsMain;
 import me.twostinkysocks.boxplugin.customitems.items.CustomItem;
 import me.twostinkysocks.boxplugin.manager.PerksManager;
 import net.minecraft.server.level.WorldServer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.EntityDamageSource;
 import net.minecraft.world.entity.EntityLiving;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.decoration.EntityArmorStand;
@@ -12,13 +14,16 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_19_R1.entity.CraftArmorStand;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
 
@@ -69,7 +74,7 @@ public class AxeOfTheShredded extends CustomItem {
             Player p = e.getPlayer();
             if(a == Action.RIGHT_CLICK_AIR || a == Action.RIGHT_CLICK_BLOCK) {
                 if(p.hasPermission("customitems.cooldownbypass") || !cooldown.containsKey(p.getUniqueId()) || cooldown.get(p.getUniqueId()) < System.currentTimeMillis()) {
-                    cooldown.put(p.getUniqueId(), System.currentTimeMillis() + (long)(750 * (BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_COOLDOWN_REDUCTION) ? 0.5 : 1)));
+                    cooldown.put(p.getUniqueId(), System.currentTimeMillis() + (long)(3000 * (BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_COOLDOWN_REDUCTION) ? 0.5 : 1)));
                     spawnAxe(p);
                 }
             }
@@ -85,8 +90,12 @@ public class AxeOfTheShredded extends CustomItem {
                 if(p.isValid() && p.isOnline()) {
                     for(Axe axe : new ArrayList<>(spawnedAxes.get(p))) {
                         if(!axe.getArmorStand().isDead()) {
-                            if(!isNextToBlock(axe.getArmorStand())) {
-                                axe.getArmorStand().setVelocity(axe.getVelocity());
+                            if(!collidingWithBlock(axe.getArmorStand())) {
+                                //axe.getArmorStand().setVelocity(axe.getVelocity());
+                                axe.getArmorStand().setVelocity(new Vector(0,0,0));
+                                Vector delta = axe.getVelocity();
+                                Location newLoc = axe.getArmorStand().getLocation().add(delta);
+                                axe.getArmorStand().teleport(newLoc);
                                 axe.getArmorStand().setRightArmPose(new EulerAngle((axe.getArmorStand().getRightArmPose().getX()+Math.toRadians(30)) > Math.PI*2 ? (axe.getArmorStand().getRightArmPose().getX()+Math.toRadians(30))%(Math.PI*2) : (axe.getArmorStand().getRightArmPose().getX()+Math.toRadians(30)), 0, 0));
                                 damage(p, axe);
                             } else {
@@ -106,17 +115,27 @@ public class AxeOfTheShredded extends CustomItem {
         for(Entity entity : nearby) {
             if(entity instanceof Damageable && !entity.equals(p) && !(entity.getType() == EntityType.ARMOR_STAND)) {
                 Damageable damageable = (Damageable) entity;
-                damageable.damage(90, p);
-                if(entity instanceof LivingEntity) {
-                    ((LivingEntity) entity).setNoDamageTicks(0);
-                }
-                p.playSound(p.getLocation(), Sound.ITEM_FLINTANDSTEEL_USE, 0.5f, 0.5f);
+//                (((CraftLivingEntity) damageable).getHandle()).a((new EntityDamageSource("thorns", ((CraftPlayer)p).getHandle())), 11); // same as railgun
+                damageable.damage(11, p);
+                p.playSound(p.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 0f);
+                axe.getArmorStand().remove();
             }
         }
     }
 
+    private boolean collidingWithBlock(Entity e) {
+        Block head = e.getLocation().add(0, 1, 0).getBlock();
+        BoundingBox box = e.getBoundingBox();
+        box.expand(0.1);
+        BoundingBox xph = head.getRelative(1, 0 ,0).getBoundingBox();
+        BoundingBox xmh = head.getRelative(-1, 0 ,0).getBoundingBox();
+        BoundingBox yph = head.getRelative(0, 1 ,0).getBoundingBox();
+        BoundingBox zph = head.getRelative(0, 0 ,1).getBoundingBox();
+        BoundingBox zmh = head.getRelative(0, 0 ,-1).getBoundingBox();
+        return box.overlaps(xph) || box.overlaps(xmh) || box.overlaps(yph) || box.overlaps(zph) || box.overlaps(zmh);
+    }
+
     private boolean isNextToBlock(Entity e) {
-        Block feet = e.getLocation().getBlock();
         Block head = e.getLocation().add(0, 1, 0).getBlock();
         Block xph = head.getRelative(1, 0 ,0);
         Block xmh = head.getRelative(-1, 0 ,0);
@@ -138,7 +157,7 @@ public class AxeOfTheShredded extends CustomItem {
         armorStand.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, getItemId()), PersistentDataType.INTEGER, 1);
         Bukkit.getScheduler().runTaskLater(BoxPlugin.instance, () -> {
             armorStand.remove();
-        }, 8*20); // kill stand timer
+        }, 4*20); // kill stand timer
         armorStand.setInvulnerable(true);
         Location armorStandLocation = p.getLocation().add(p.getLocation().getDirection().setY(0).normalize().rotateAroundY(Math.PI / 2).multiply(0.5));
         armorStand.teleport(armorStandLocation);

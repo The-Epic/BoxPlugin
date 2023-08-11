@@ -5,7 +5,7 @@ api-version: 1.19
 prefix: BoxPlugin
 authors: [ 2stinkysocks ]
 description: Custom plugin for word witero box server
-depend: [ExcellentCrates]
+depend: [ExcellentCrates, MythicMobs]
 softdepend: [LuckPerms, HolographicDisplays, PlaceholderAPI]
 commands:
   sus:
@@ -50,7 +50,6 @@ commands:
     description: clear a streak
     usage: /<command>
   cgive:
-    permission: customitems.give
     description: Give a custom item to yourself or another player
     usage: /<command>
   tree:
@@ -64,6 +63,15 @@ commands:
   claimlegacyrewards:
     usage: /<command>
     description: claim legacy rewards
+  addtag:
+    usage: /<command>
+    description: add tags to items
+  regenschematic:
+    usage: /<command>
+    description: regen schematic
+  debug:
+    usage: /<command>
+    description: more logging
 permissions:
   boxplugin.crash:
     default: false
@@ -79,6 +87,9 @@ permissions:
     default: false
   terrainregenerator.reload:
     description: reload plugin
+    default: false
+  terrainregenerator.regenschematic:
+    description: regen schematics
     default: false
   boxplugin.key.common:
     description: give self common key
@@ -112,4 +123,7 @@ permissions:
     default: false
   boxplugin.tree:
     description: tree
+    default: false
+  boxplugin.addtag:
+    description: add tags to items (should be admins)
     default: false

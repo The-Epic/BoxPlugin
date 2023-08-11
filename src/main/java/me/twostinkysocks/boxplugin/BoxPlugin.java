@@ -27,9 +27,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
@@ -43,10 +43,7 @@ import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabCompleter {
@@ -57,6 +54,7 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
     public HashMap<Material, Integer> blockExperience;
     public HashMap<EntityType, Integer> entityExperience;
     public ArrayList<Location> placedBlocks;
+    public HashMap<UUID, Boolean> debugEnabled;
 
     private ScoreboardManager scoreboardManager;
 
@@ -72,6 +70,9 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
 
     private Compressor compressor;
 
+    // player who killed, <player who was killed, times>
+    private HashMap<UUID, HashMap<UUID, Integer>> killsInHour;
+
 
     private YamlConfiguration offlineXPFile;
 
@@ -80,6 +81,7 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
     public void load() {
         blockExperience = new HashMap<>();
         entityExperience = new HashMap<>();
+        debugEnabled = new HashMap<>();
         if(!this.getDataFolder().exists()) {
             this.getDataFolder().mkdir();
         }
@@ -118,6 +120,7 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
     public void onEnable() {
         instance = this;
         protocolManager = ProtocolLibrary.getProtocolManager();
+        killsInHour = new HashMap<>();
         placedBlocks = new ArrayList<Location>();
         scoreboardManager = new ScoreboardManager();
         pvpManager = new PVPManager();
@@ -146,10 +149,23 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
         getCommand("clearstreak").setTabCompleter(this);
         getCommand("tree").setExecutor(this);
         getCommand("claimlegacyrewards").setExecutor(this);
+        getCommand("addtag").setExecutor(this);
+        getCommand("addtag").setTabCompleter(this);
+        getCommand("debug").setExecutor(this);
         getServer().getPluginManager().registerEvents(new Listeners(), this);
         load();
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlaceholderAPIExpansion().register();
+        }
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            killsInHour = new HashMap<>();
+        }, 20 * 60 * 60, 20 * 60 * 60);
+        for(World world : Bukkit.getWorlds()) {
+            for(Entity entity : world.getEntities()) {
+                if(entity instanceof Slime) { // slime and magma
+                    entity.remove();
+                }
+            }
         }
         new PacketListeners();
         new TerrainRegeneratorMain().onEnable();
@@ -170,6 +186,14 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
 //            }
 //        }
 //    }
+
+    public HashMap<UUID, HashMap<UUID, Integer>> getKillsInHour() {
+        return killsInHour;
+    }
+
+    public HashMap<UUID, Boolean> getDebugEnabled() {
+        return this.debugEnabled;
+    }
 
     public ScoreboardManager getScoreboardManager() {
         return scoreboardManager;
@@ -469,9 +493,61 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                     p.sendMessage(ChatColor.RED + "You have no rewards to claim!");
                 } else {
                     int total = BoxPlugin.instance.getXpManager().getCumulativeLevelUpReward(BoxPlugin.instance.getXpManager().getLevel(p));
-                    p.getInventory().addItem(Util.gigaCoin(total));
+                    HashMap<Integer, ItemStack> toDrop = p.getInventory().addItem(Util.gigaCoinArray(total));
+                    toDrop.forEach((index, item) -> {
+                        Item entity = (Item) p.getWorld().spawnEntity(p.getLocation(), EntityType.DROPPED_ITEM);
+                        entity.setItemStack(item);
+                    });
                     p.sendMessage(ChatColor.GREEN + "Claimed " + total + " giga coins!");
                     p.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "legacylevelscompensated"), PersistentDataType.INTEGER, 1);
+                }
+            } else if(label.equals("addtag")) {
+                if(!p.hasPermission("boxplugin.addtag")) {
+                    p.sendMessage(ChatColor.RED + "You don't have permission!");
+                    return true;
+                }
+                if(p.getInventory().getItemInMainHand().getType() == Material.AIR) {
+                    p.sendMessage(ChatColor.RED + "You need to hold an item!");
+                    return true;
+                }
+                // /addtag string eggcommand mm spawn Zamm 1 %world%,%x%,%y%,%z%
+                if(args.length == 0 || (!args[0].equals("string") && !args[0].equals("int"))) {
+                    p.sendMessage(ChatColor.RED + "Invalid data type! /addtag <string|int> <tag> <value>");
+                    return true;
+                }
+                if(args.length == 1 || args.length == 2) {
+                    p.sendMessage(ChatColor.RED + "Missing args! /addtag <string|int> <tag> <value>");
+                    return true;
+                }
+                ItemStack item = p.getInventory().getItemInMainHand();
+                ItemMeta meta = item.getItemMeta();
+                try {
+                    if(args[0].equals("int")) {
+                        int value = Integer.parseInt(args[2]);
+                        meta.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, args[1]), PersistentDataType.INTEGER, value);
+                    } else {
+                        String value = String.join(" ", Arrays.stream(args).skip(2).collect(Collectors.toList()));
+                        meta.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, args[1]), PersistentDataType.STRING, value);
+                    }
+                    item.setItemMeta(meta);
+                    p.getInventory().setItemInMainHand(item);
+                    p.sendMessage(ChatColor.AQUA + "Applied tag!");
+                } catch (NumberFormatException e) {
+                    p.sendMessage(ChatColor.RED + "Value was not an integer, but integer type was supplied! /addtag <string|int> <tag> <value>");
+                    return true;
+                }
+            } else if(label.equals("debug")) {
+                if(debugEnabled.containsKey(p.getUniqueId())) {
+                    if(debugEnabled.get(p.getUniqueId())) {
+                        debugEnabled.put(p.getUniqueId(), false);
+                        p.sendMessage(ChatColor.RED + "Toggled debug off");
+                    } else {
+                        debugEnabled.put(p.getUniqueId(), true);
+                        p.sendMessage(ChatColor.RED + "Toggled debug on");
+                    }
+                } else {
+                    debugEnabled.put(p.getUniqueId(), true);
+                    p.sendMessage(ChatColor.RED + "Toggled debug on");
                 }
             }
         }
@@ -517,6 +593,11 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                     keys.add("legendary");
                 }
                 StringUtil.copyPartialMatches(args[0], keys, completions);
+                return completions;
+            }
+        } else if(alias.equals("addtag")) {
+            if(args.length == 1) {
+                StringUtil.copyPartialMatches(args[0], List.of("int", "string"), completions);
                 return completions;
             }
         }

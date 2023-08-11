@@ -48,7 +48,10 @@ public class CustomItemsMain implements CommandExecutor, TabCompleter {
         registerItem(new SpaceHelmet(this));
         registerItem(new AxeOfTheShredded(this));
         registerItem(new AugmentedRailgun(this));
-//        registerItem(new TalismanOfEnergy(this));
+        registerItem(new PulseBow(this));
+        registerItem(new Tutorial(this));
+        registerItem(new TalismanOfEnergy(this));
+        registerItem(new ClusterGrenade(this));
         BoxPlugin.instance.getLogger().info("Loaded custom items!");
     }
 
@@ -56,7 +59,7 @@ public class CustomItemsMain implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         CommandSender p = sender;
             if(command.getName().equals("cgive")) {
-                if(!p.hasPermission("customitems.give")) {
+                if(!sender.isOp() && !p.hasPermission("customitems.give")) {
                     p.sendMessage(ChatColor.RED + "You don't have permission to do that!");
                     return true;
                 }

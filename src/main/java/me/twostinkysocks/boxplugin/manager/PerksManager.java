@@ -45,7 +45,8 @@ public class PerksManager {
         HASTE(new PerkHaste()),
         ROCKETS(new PerkRockets()),
         OBSIDIAN(new PerkObsidian()),
-        XPBOOST(new PerkXPBoost());
+        XPBOOST(new PerkXPBoost()),
+        MAGNET(new PerkMagnet());
 
         public final AbstractPerk instance;
 
@@ -236,7 +237,11 @@ public class PerksManager {
             if(selectedPerks.size() < 3) {
                 ItemStack itemThree = new ItemStack(Material.STONE);
                 ItemMeta itemThreeMeta = itemThree.getItemMeta();
-                itemThreeMeta.setDisplayName(ChatColor.GRAY + "Click to change perk");
+                itemThreeMeta.setDisplayName(ChatColor.GRAY + "No perk selected");
+                List<String> newItemThreeLore = itemThreeMeta.getLore() == null ? new ArrayList<>() : itemThreeMeta.getLore();
+                newItemThreeLore.add("");
+                newItemThreeLore.add(ChatColor.GRAY + "Click to change perk");
+                itemThreeMeta.setLore(newItemThreeLore);
                 itemThree.setItemMeta(itemThreeMeta);
                 perkThree = new GuiItem(itemThree, e -> {
                     clickPerkSlot(e, 3);
@@ -298,10 +303,10 @@ public class PerksManager {
                 });
             }
         }
-        if(BoxPlugin.instance.getXpManager().getLevel(p) < 300) {
+        if(BoxPlugin.instance.getXpManager().getLevel(p) < 400) {
             ItemStack item = new ItemStack(Material.BEDROCK);
             ItemMeta meta = item.getItemMeta();
-            meta.setDisplayName(ChatColor.RED + "Unlocks at level 300");
+            meta.setDisplayName(ChatColor.RED + "Unlocks at level 400");
             item.setItemMeta(meta);
             megaperkTwo = new GuiItem(item, e -> {
                 e.setCancelled(true);
@@ -630,7 +635,16 @@ public class PerksManager {
                     }
                 }
             });
-            pane.addItem(item, j+1, 2);
+            int x = 0;
+            int y = 0;
+            if(j == 2 || j == 3 || j == 6 || j == 7) {
+                x+=1;
+            }
+            if(j >= 4) {
+                y+=1;
+                x-=4;
+            }
+            pane.addItem(item, j+2+x, 1+y);
         }
         ItemStack cancel = new ItemStack(Material.BARRIER);
         ItemMeta meta = cancel.getItemMeta();

@@ -20,10 +20,10 @@ public class MegaPerkLifeSteal extends AbstractPerk {
     public MegaPerkLifeSteal() {
         ItemStack guiItem = new ItemStack(Material.REDSTONE);
         ItemMeta meta = guiItem.getItemMeta();
-        meta.setDisplayName(ChatColor.RED + "Mega Lifesteal");
+        meta.setDisplayName(ChatColor.RED + "Lifesteal");
         meta.setLore(List.of(
                 "",
-                ChatColor.GRAY + "Heal for 10% of the final damage you deal to enemies"
+                ChatColor.GRAY + "Heal for 15% of the final melee damage you deal to enemies"
         ));
         guiItem.setItemMeta(meta);
 
