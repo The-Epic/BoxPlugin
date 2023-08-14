@@ -1,0 +1,30 @@
+schematics:
+  <name>:
+    x: 0
+    y: 0
+    z: 0
+    timer-seconds: 60
+    ignoreairblocks: true
+    includeentities: true
+    world: Xanatos
+    respawn-broadcast: "respawned"
+randomizedschematics:
+  groups:
+    <groupname>:
+      x: 0
+      y: 0
+      z: 0
+      timer-seconds: 60
+      schematics:
+        - nameofschematicfile1
+        - nameofschematicfile2
+        - nameofschematicfile3
+        - etc...
+  types:
+    <nameofschematicfile>:
+      ignoreairblocks: true
+      includeentities: true
+      respawn-broadcast: "respawned at %groupname%"
+entities:
+  <name>:
+    ...etc

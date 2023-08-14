@@ -207,8 +207,7 @@ public class AugmentedRailgun extends CustomItem {
 
     private void shoot(Player p) throws ReflectiveOperationException {
         UUID instanceUUID = UUID.randomUUID();
-        List<Block> lineOfSight = p.getLineOfSight(Set.of(Material.values()), 50);
-        Location startLoc = p.getLocation().clone().add(0, 1, 0);
+        Location startLoc = p.getEyeLocation().clone();
         spawnEffects(p, instanceUUID, p.getLocation().getDirection());
         Bukkit.getScheduler().runTaskLater(BoxPlugin.instance, () -> {
             List<Entity> nearbyEntities = new ArrayList<>(startLoc.getWorld().getNearbyEntities(startLoc, 50, 50, 50));
@@ -246,7 +245,7 @@ public class AugmentedRailgun extends CustomItem {
         ArrayList<Damageable> entities = new ArrayList<>();
         for(Entity entity : nearbyEntities) {
             if(entity instanceof Damageable) {
-                if(trace.intersects(entity.getBoundingBox().clone().expand(0.5), 50, 0.1)) {
+                if(trace.intersects(entity.getBoundingBox().clone().expand(0.75), 50, 0.1)) {
                     entities.add((Damageable) entity);
                 }
             }

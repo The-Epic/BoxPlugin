@@ -123,8 +123,8 @@ public class AxeOfTheShredded extends CustomItem {
         }
     }
 
-    private boolean collidingWithBlock(Entity e) {
-        Block head = e.getLocation().add(0, 1, 0).getBlock();
+    private boolean collidingWithBlock(ArmorStand e) {
+        Block head = e.getEyeLocation().getBlock();
         BoundingBox box = e.getBoundingBox();
         box.expand(0.1);
         BoundingBox xph = head.getRelative(1, 0 ,0).getBoundingBox();

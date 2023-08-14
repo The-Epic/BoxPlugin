@@ -52,7 +52,7 @@ public class ClusterGrenade extends CustomItem {
 
     private void shoot(Player p) {
         UUID instanceUUID = UUID.randomUUID();
-        Location startLoc = p.getLocation().clone().add(0, 1, 0);
+        Location startLoc = p.getEyeLocation().clone();
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WITHER_SHOOT,1f, 1.6f);
         spawnTNT(p, startLoc, startLoc.getDirection().normalize(), 40, instanceUUID);
     }

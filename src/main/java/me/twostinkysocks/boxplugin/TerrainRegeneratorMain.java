@@ -27,7 +27,6 @@ import net.minecraft.world.entity.ai.BehaviorController;
 import net.minecraft.world.entity.ai.behavior.BehaviorAttackTargetSet;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.monster.EntitySilverfish;
-import net.minecraft.world.entity.monster.warden.Warden;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -174,6 +173,19 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
                 }
             }
         }, 30 * 60 * 20, 30 * 60 * 20));
+        tasks.add(Bukkit.getScheduler().runTaskTimer(BoxPlugin.instance, () -> {
+            for(ArrayList<UUID> list : spawnedEntities.values()) {
+                for(UUID uuid : list) {
+                    Entity entity = Bukkit.getEntity(uuid);
+                    if(entity instanceof Warden) {
+                        Warden warden = (Warden) entity;
+                        if(warden.getTarget() != null && warden.getTarget() instanceof Silverfish) {
+                            warden.setAnger(warden.getTarget(), 0);
+                        }
+                    }
+                }
+            }
+        }, 1, 1));
         tasks.add(Bukkit.getScheduler().runTaskTimer(BoxPlugin.instance, () -> {
             for(World world: Bukkit.getWorlds()) {
                 for(Entity entity : world.getEntities()) {
