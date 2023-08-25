@@ -1,25 +1,22 @@
 package me.twostinkysocks.boxplugin.util;
 
-import com.google.common.base.Preconditions;
-import io.lumine.mythic.bukkit.utils.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import me.twostinkysocks.boxplugin.BoxPlugin;
 import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
+import net.minecraft.world.entity.EntityLiving;
+import org.bukkit.*;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftHumanEntity;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.util.Vector;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -83,6 +80,50 @@ public class Util {
         return coinStacks;
     }
 
+    public static void spawnTallCircle(World w, Location circleLocation, Vector direction, double radius, int points, Particle.DustOptions dustOptions) {
+        double interval = 2*Math.PI/points;
+        for(int i = 0; i < points; i++) {
+            double t = i*interval;
+            double x = radius * Math.cos(t);
+            double y = radius * Math.sin(t);
+            double z = 0;
+            Vector v = new Vector(x,y,z);
+            v = MathUtil.rotateFunction(v, new Location(w, 0,0,0).setDirection(direction));
+            w.spawnParticle(Particle.SCULK_SOUL, new Location(w, circleLocation.getX() + v.getX(), circleLocation.getY() + v.getY(), circleLocation.getZ() + v.getZ()), 4, 0, 0.8, 0, 0);
+        }
+
+
+        //
+//        // this works
+//        int points = 50;
+//        double radius = 0.5;
+//        double interval = 2*Math.PI/points;
+//        Location circleLocation = startLoc.clone();
+//        for(int i = 0; i < points; i++) {
+//            double t = i*interval;
+//            double x = radius * Math.cos(t);
+//            double y = radius * Math.sin(t);
+//            double z = 0;
+//            Vector v = new Vector(x,y,z);
+//            v = MathUtil.rotateFunction(v, new Location(p.getWorld(), 0,0,0).setDirection(direction));
+//            p.getWorld().spawnParticle(Particle.DRIP_LAVA, new Location(p.getWorld(), circleLocation.getX() + v.getX(), circleLocation.getY() + v.getY(), circleLocation.getZ() + v.getZ()), 0, 0, 0, 0);
+//        }
+        //
+    }
+
+    public static void spawnCircle(World w, Location circleLocation, Vector direction, double radius, int points) {
+        double interval = 2*Math.PI/points;
+        for(int i = 0; i < points; i++) {
+            double t = i*interval;
+            double x = radius * Math.cos(t);
+            double y = radius * Math.sin(t);
+            double z = 0;
+            Vector v = new Vector(x,y,z);
+            v = MathUtil.rotateFunction(v, new Location(w, 0,0,0).setDirection(direction));
+            w.spawnParticle(Particle.END_ROD, new Location(w, circleLocation.getX() + v.getX(), circleLocation.getY() + v.getY(), circleLocation.getZ() + v.getZ()), 1, 0, 0.1, 0, 0);
+        }
+    }
+
     public static String colorize(String string) {
         Pattern pattern = Pattern.compile("#[a-fA-F0-9]{6}");
         for (Matcher matcher = pattern.matcher(string); matcher.find(); matcher = pattern.matcher(string)) {
@@ -101,5 +142,29 @@ public class Util {
         if(BoxPlugin.instance.getDebugEnabled().containsKey(p.getUniqueId()) && BoxPlugin.instance.getDebugEnabled().get(p.getUniqueId())) {
             p.sendMessage(ChatColor.GRAY + "[DEBUG] " + message);
         }
+    }
+
+    public static <T> T randomFromList(List<T> list) {
+        return list.get(ThreadLocalRandom.current().nextInt(list.size()) % list.size());
+    }
+
+    public static boolean isInteger(String s) {
+        int i;
+        try {
+            i = Integer.parseInt(s);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    public static void hitThroughShield(Entity source, HumanEntity target, double damage, int cooldownticks) {
+        if(target.isBlocking()) {
+            target.setCooldown(Material.SHIELD, cooldownticks);
+            EntityLiving nms = ((CraftHumanEntity) target).getHandle();
+            // EntityLiving#clearActiveItem()  -  actually disables it
+            nms.eZ();
+        }
+        target.damage(damage, source);
     }
 }

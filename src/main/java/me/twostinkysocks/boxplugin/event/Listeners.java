@@ -1,15 +1,12 @@
 package me.twostinkysocks.boxplugin.event;
 
-import io.lumine.mythic.bukkit.MythicBukkit;
 import me.twostinkysocks.boxplugin.BoxPlugin;
 import me.twostinkysocks.boxplugin.manager.PerksManager;
+import me.twostinkysocks.boxplugin.manager.PerksManager.Perk;
 import me.twostinkysocks.boxplugin.perks.PerkXPBoost;
 import me.twostinkysocks.boxplugin.util.Util;
-import me.twostinkysocks.boxplugin.manager.PerksManager.Perk;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryPlayer;
 import org.bukkit.entity.*;
@@ -20,12 +17,14 @@ import org.bukkit.event.block.*;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
-import org.bukkit.event.inventory.*;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryAction;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
-import javax.naming.Name;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -371,21 +370,31 @@ public class Listeners implements Listener {
 
         // prevent spam killing
         HashMap<UUID, Integer> kills = BoxPlugin.instance.getKillsInHour().get(cause.getUniqueId());
+        // if the player has already killed at least someone and has killed the specific player
         if(kills != null && kills.containsKey(target.getUniqueId())) {
+            // then add one to that person
             kills.put(target.getUniqueId(), kills.get(target.getUniqueId())+1);
         } else {
-            HashMap<UUID, Integer> inner = new HashMap<>();
-            inner.put(target.getUniqueId(), 1);
-            BoxPlugin.instance.getKillsInHour().put(cause.getUniqueId(), inner);
+            // if the player has not killed anyone
+            if(kills == null) {
+                // create new data
+                HashMap<UUID, Integer> inner = new HashMap<>();
+                inner.put(target.getUniqueId(), 1);
+                BoxPlugin.instance.getKillsInHour().put(cause.getUniqueId(), inner);
+                // if the player has killed people, but has not killed this person
+            } else if(kills != null && !kills.containsKey(target.getUniqueId())) {
+                // set the kilsl for that person to 1
+                kills.put(target.getUniqueId(), 1);
+            }
         }
         kills = BoxPlugin.instance.getKillsInHour().get(cause.getUniqueId());
         BoxPlugin.instance.getKillsInHour().put(cause.getUniqueId(), kills);
 
-        if(BoxPlugin.instance.getKillsInHour().get(cause.getUniqueId()).get(target.getUniqueId()) > 20) {
+        if(BoxPlugin.instance.getKillsInHour().get(cause.getUniqueId()).get(target.getUniqueId()) > 10) {
             e.setKeepInventory(true);
             e.getDrops().clear();
-            cause.sendMessage(ChatColor.RED + "You cannot kill the same player more than 20 times per hour!");
-            target.sendMessage(ChatColor.RED + "You were killed by the same player more than 20 times in one hour, so you lost no items.");
+            cause.sendMessage(ChatColor.RED + "You cannot kill the same player more than 10 times per 2 hours!");
+            target.sendMessage(ChatColor.RED + "You were killed by the same player more than 10 times in 2 hours, so you lost no items.");
             return;
         }
 

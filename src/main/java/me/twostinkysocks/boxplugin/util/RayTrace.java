@@ -1,11 +1,14 @@
 package me.twostinkysocks.boxplugin.util;
 
-import org.bukkit.Effect;
+import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.World;
+import org.bukkit.entity.Entity;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class RayTrace {
 
@@ -79,6 +82,33 @@ public class RayTrace {
     public boolean intersects(BoundingBox boundingBox, double blocksAway, double accuracy) {
         ArrayList<Vector> positions = traverse(blocksAway, accuracy);
         for (Vector position : positions) {
+            if (intersects(position, boundingBox.getMin(), boundingBox.getMax())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<Entity> intersectsWithEntities(List<Entity> entityList, double blocksAway, double accuracy, double expansion) {
+        List<Entity> finalList = new ArrayList<>();
+        ArrayList<Vector> positions = traverse(blocksAway, accuracy);
+        for(Vector position : positions) {
+//            entityList.get(0).getWorld().spawnParticle(Particle.END_ROD, new Location(entityList.get(0).getWorld(), position.getX(), position.getY(), position.getZ()), 1, 0, 0, 0, 0);
+            for(Entity e : entityList) {
+                BoundingBox box = e.getBoundingBox().clone().expand(expansion);
+                if(intersects(position, box.getMin(), box.getMax())) {
+                    finalList.add(e);
+                }
+            }
+        }
+        return finalList;
+    }
+
+
+    public boolean intersectsDebug(BoundingBox boundingBox, double blocksAway, double accuracy, World world) {
+        ArrayList<Vector> positions = traverse(blocksAway, accuracy);
+        for (Vector position : positions) {
+            world.spawnParticle(Particle.END_ROD, new Location(world, position.getX(), position.getY(), position.getZ()), 1, 0, 0, 0, 0);
             if (intersects(position, boundingBox.getMin(), boundingBox.getMax())) {
                 return true;
             }

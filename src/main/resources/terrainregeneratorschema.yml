@@ -11,10 +11,14 @@ schematics:
 randomizedschematics:
   groups:
     <groupname>:
-      x: 0
-      y: 0
-      z: 0
+      locations:
+        - 0,0,0
+        - 10,10,10
+        - 50,50,50
+        - etc...
+      world: Xanatos
       timer-seconds: 60
+      respawn-broadcast: "respawned at the group or something"
       schematics:
         - nameofschematicfile1
         - nameofschematicfile2
@@ -24,7 +28,7 @@ randomizedschematics:
     <nameofschematicfile>:
       ignoreairblocks: true
       includeentities: true
-      respawn-broadcast: "respawned at %groupname%"
+
 entities:
   <name>:
     ...etc

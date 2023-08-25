@@ -7,18 +7,13 @@ import me.twostinkysocks.boxplugin.manager.PerksManager;
 import me.twostinkysocks.boxplugin.util.Laser;
 import me.twostinkysocks.boxplugin.util.MathUtil;
 import me.twostinkysocks.boxplugin.util.RayTrace;
-import net.minecraft.util.MathHelper;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.EntityDamageSource;
+import me.twostinkysocks.boxplugin.util.Util;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.block.Action;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
 
 import java.math.BigDecimal;
@@ -70,7 +65,7 @@ public class AugmentedRailgun extends CustomItem {
     }
 
     private void spawnEffects(Player p, UUID instanceUUID, Vector direction) throws ReflectiveOperationException {
-        Location startLoc = p.getLocation().add(0,1,0);
+        Location startLoc = p.getLocation().clone().add(0, 1, 0);
         Location endLoc = p.getTargetBlock(Set.of(Material.values()), 50).getLocation();
         Location middle = new Location(startLoc.getWorld(), (startLoc.getX()+endLoc.getX())/2, (startLoc.getY()+endLoc.getY())/2, (startLoc.getZ()+endLoc.getZ())/2);
         p.getWorld().playSound(startLoc, Sound.BLOCK_CONDUIT_ACTIVATE, 0.5f, 2f);
@@ -89,7 +84,7 @@ public class AugmentedRailgun extends CustomItem {
             } else {
                 particleTimers.put(instanceUUID, 0);
             }
-            if(particleTimers.get(instanceUUID) > 20) {
+            if(particleTimers.get(instanceUUID) > 10) {
                 particleTimers.remove(instanceUUID);
                 task.cancel();
             }
@@ -105,7 +100,7 @@ public class AugmentedRailgun extends CustomItem {
             } else {
                 ring1Timer.put(instanceUUID, 0);
             }
-            if(ring1Timer.get(instanceUUID) > 20) {
+            if(ring1Timer.get(instanceUUID) > 10) {
                 ring1Timer.remove(instanceUUID);
                 task.cancel();
             }
@@ -122,11 +117,11 @@ public class AugmentedRailgun extends CustomItem {
             } else {
                 ring2Timer.put(instanceUUID, 0);
             }
-            if(ring2Timer.get(instanceUUID) > 15) {
+            if(ring2Timer.get(instanceUUID) > 8) {
                 ring2Timer.remove(instanceUUID);
                 task.cancel();
             }
-        }, 5, 1);
+        }, 2, 1);
         Bukkit.getScheduler().runTaskTimer(BoxPlugin.instance, task -> {
             if(task.isCancelled()) return; // just in case
 
@@ -138,11 +133,11 @@ public class AugmentedRailgun extends CustomItem {
             } else {
                 ring3Timer.put(instanceUUID, 0);
             }
-            if(ring3Timer.get(instanceUUID) > 10) {
+            if(ring3Timer.get(instanceUUID) > 6) {
                 ring3Timer.remove(instanceUUID);
                 task.cancel();
             }
-        }, 10, 1);
+        }, 4, 1);
         Laser laser = new Laser.GuardianLaser(startLoc, endLoc, -1, -1);
         laser.start(BoxPlugin.instance);
 
@@ -173,11 +168,11 @@ public class AugmentedRailgun extends CustomItem {
                     laser.stop();
                 }
             }
-            if(finalRingTimer.get(instanceUUID) > 15) {
+            if(finalRingTimer.get(instanceUUID) > 16) {
                 finalRingTimer.remove(instanceUUID);
                 task.cancel();
             }
-        }, 18, 1);
+        }, 8, 1);
         Bukkit.getScheduler().runTaskLater(BoxPlugin.instance, () -> {
             p.getWorld().playSound(startLoc, Sound.BLOCK_CONDUIT_DEACTIVATE, 0.5f, 2f);
             p.getWorld().playSound(startLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.4f, 1.7f);
@@ -201,29 +196,46 @@ public class AugmentedRailgun extends CustomItem {
             if(laser.isStarted()) {
                 laser.stop();
             }
-        }, 20);
+        }, 10);
 
     }
 
     private void shoot(Player p) throws ReflectiveOperationException {
         UUID instanceUUID = UUID.randomUUID();
-        Location startLoc = p.getEyeLocation().clone();
+        Location startLoc = p.getLocation().clone().add(0, 1, 0);
         spawnEffects(p, instanceUUID, p.getLocation().getDirection());
         Bukkit.getScheduler().runTaskLater(BoxPlugin.instance, () -> {
             List<Entity> nearbyEntities = new ArrayList<>(startLoc.getWorld().getNearbyEntities(startLoc, 50, 50, 50));
+
+            //DEBUG//
+//            for(Entity ent : nearbyEntities) {
+//                ent.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, ent.getLocation().clone().add(0,1,0), 1, 0, 0, 0, 0);
+//            }
+            //DEBUG//
+
             //List<Damageable> damageables = raycastEntities(lineOfSight, nearbyEntities);
             List<Damageable> damageables = raycastEntitiesAccurate(startLoc, nearbyEntities);
+
+            //DEBUG//
+//            for(Entity ent : damageables) {
+//                ent.getWorld().spawnParticle(Particle.END_ROD, ent.getLocation().clone().add(0,1,0), 50, 0.2, 0.2, 0.2, 0);
+//            }
+            //DEBUG//
+
             for(Damageable d : damageables) {
                 if(d instanceof ArmorStand) return;
                 if(d instanceof ItemFrame) return;
                 if(d instanceof LivingEntity) {
-                    if(d.getUniqueId().equals(p.getUniqueId())) return;
-                    ((LivingEntity) d).addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 2, 2, true, false));
+                    if(d.getUniqueId().equals(p.getUniqueId())) continue;
+                    ((LivingEntity) d).addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 30, 2, true, false));
                 }
-                // damage (cause, amount)
-                d.damage(100, p);
+                if(d instanceof Player && ((Player) d).isBlocking()) {
+                    Util.hitThroughShield(p, (HumanEntity) d, 100, 30);
+                } else {
+                    d.damage(100, p);
+                }
             }
-        }, 20);
+        }, 10);
     }
 
     private List<Damageable> raycastEntities(List<Block> lineOfSight, List<Entity> nearbyEntities) {
@@ -242,15 +254,7 @@ public class AugmentedRailgun extends CustomItem {
 
     private List<Damageable> raycastEntitiesAccurate(Location location, List<Entity> nearbyEntities) {
         RayTrace trace = new RayTrace(location.toVector(), location.getDirection());
-        ArrayList<Damageable> entities = new ArrayList<>();
-        for(Entity entity : nearbyEntities) {
-            if(entity instanceof Damageable) {
-                if(trace.intersects(entity.getBoundingBox().clone().expand(0.75), 50, 0.1)) {
-                    entities.add((Damageable) entity);
-                }
-            }
-        }
-        return entities;
+        return trace.intersectsWithEntities(nearbyEntities, 50, 0.5, 0.75).stream().filter(entity -> entity instanceof Damageable).map(entity -> (Damageable) entity).collect(Collectors.toList());
     }
 
     private void spawnCircle(Player p, Location circleLocation, Vector direction, double radius, int points, double speed) {

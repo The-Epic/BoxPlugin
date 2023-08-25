@@ -13,8 +13,6 @@ import su.nexmedia.engine.api.config.JYML;
 import su.nightexpress.excellentcrates.key.CrateKey;
 
 import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class XPManager {
 

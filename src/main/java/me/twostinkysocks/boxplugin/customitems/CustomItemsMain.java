@@ -4,7 +4,6 @@ package me.twostinkysocks.boxplugin.customitems;
 import me.twostinkysocks.boxplugin.BoxPlugin;
 import me.twostinkysocks.boxplugin.customitems.items.CustomItem;
 import me.twostinkysocks.boxplugin.customitems.items.impl.*;
-import net.minecraft.world.item.ItemCrossbow;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -13,19 +12,15 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,6 +47,9 @@ public class CustomItemsMain implements CommandExecutor, TabCompleter {
         registerItem(new Tutorial(this));
         registerItem(new TalismanOfEnergy(this));
         registerItem(new ClusterGrenade(this));
+        registerItem(new HealSpear(this));
+        registerItem(new Hyperion(this));
+        registerItem(new MilkPotion(this));
         BoxPlugin.instance.getLogger().info("Loaded custom items!");
     }
 

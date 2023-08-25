@@ -4,34 +4,20 @@ import me.twostinkysocks.boxplugin.BoxPlugin;
 import me.twostinkysocks.boxplugin.customitems.CustomItemsMain;
 import me.twostinkysocks.boxplugin.customitems.items.CustomItem;
 import me.twostinkysocks.boxplugin.manager.PerksManager;
-import net.minecraft.server.level.WorldServer;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.EntityDamageSource;
-import net.minecraft.world.entity.EntityLiving;
-import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.entity.decoration.EntityArmorStand;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftArmorStand;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.event.entity.EntityShootBowEvent;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 
 public class AxeOfTheShredded extends CustomItem {
 
@@ -149,8 +135,8 @@ public class AxeOfTheShredded extends CustomItem {
         return false;
     }
 
-    private CraftArmorStand createStand(Player p) {
-        CraftArmorStand armorStand = (CraftArmorStand) p.getWorld().spawnEntity(new Location(p.getWorld(), 0, 0, 0), EntityType.ARMOR_STAND);
+    private ArmorStand createStand(Player p) {
+        ArmorStand armorStand = (ArmorStand) p.getWorld().spawnEntity(new Location(p.getWorld(), 0, 0, 0), EntityType.ARMOR_STAND);
         armorStand.setVisible(false);
         armorStand.setArms(true);
         armorStand.getEquipment().setItemInMainHand(new ItemStack(Material.IRON_SWORD));
@@ -167,7 +153,7 @@ public class AxeOfTheShredded extends CustomItem {
 
     private void spawnAxe(Player p) {
         p.playSound(p.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.5f, 0.5f);
-        CraftArmorStand armorStand = createStand(p);
+        ArmorStand armorStand = createStand(p);
 
         if(spawnedAxes.containsKey(p)) {
             if(!spawnedAxes.get(p).contains(p)) {

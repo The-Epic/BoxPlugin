@@ -16,6 +16,7 @@ import me.twostinkysocks.boxplugin.manager.PVPManager;
 import me.twostinkysocks.boxplugin.manager.PerksManager;
 import me.twostinkysocks.boxplugin.manager.ScoreboardManager;
 import me.twostinkysocks.boxplugin.manager.XPManager;
+import me.twostinkysocks.boxplugin.perks.Upgradable;
 import me.twostinkysocks.boxplugin.util.PlaceholderAPIExpansion;
 import me.twostinkysocks.boxplugin.util.Util;
 import net.luckperms.api.LuckPerms;
@@ -38,8 +39,6 @@ import su.nightexpress.excellentcrates.ExcellentCrates;
 import su.nightexpress.excellentcrates.key.CrateKey;
 import su.nightexpress.excellentcrates.key.KeyManager;
 
-import javax.naming.Name;
-import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -152,6 +151,10 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
         getCommand("addtag").setExecutor(this);
         getCommand("addtag").setTabCompleter(this);
         getCommand("debug").setExecutor(this);
+        getCommand("getperkupgradelevel").setExecutor(this);
+        getCommand("getperkupgradelevel").setTabCompleter(this);
+        getCommand("setperkupgradelevel").setExecutor(this);
+        getCommand("setperkupgradelevel").setTabCompleter(this);
         getServer().getPluginManager().registerEvents(new Listeners(), this);
         load();
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -159,7 +162,16 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
         }
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             killsInHour = new HashMap<>();
-        }, 20 * 60 * 60, 20 * 60 * 60);
+        }, 20 * 60 * 60 * 2, 20 * 60 * 60 * 2);
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            for(World world : Bukkit.getWorlds()) {
+                for(Entity e : world.getEntities()) {
+                    if(e instanceof Zombie) {
+                        ((Zombie) e).setConversionTime(-1);
+                    }
+                }
+            }
+        }, 0, 100);
         for(World world : Bukkit.getWorlds()) {
             for(Entity entity : world.getEntities()) {
                 if(entity instanceof Slime) { // slime and magma
@@ -549,6 +561,35 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                     debugEnabled.put(p.getUniqueId(), true);
                     p.sendMessage(ChatColor.RED + "Toggled debug on");
                 }
+            } else if(label.equals("getperkupgradelevel")) {
+                // /getperkupgradelevel <player> <upgradeableperk>
+                if(!p.hasPermission("manageperks")) {
+                    p.sendMessage(ChatColor.RED + "You don't have permission!");
+                    return true;
+                }
+                if(args.length < 2 || Bukkit.getPlayer(args[0]) == null || PerksManager.Perk.getByName(args[1]) == null || !(PerksManager.Perk.getByName(args[1]).instance instanceof Upgradable)) {
+                    p.sendMessage(ChatColor.RED + "Usage: /getperkupgradelevel <player> <upgradeableperk>");
+                    return true;
+                }
+                Upgradable up = (Upgradable) PerksManager.Perk.getByName(args[1]).instance;
+                Player toSearch = Bukkit.getPlayer(args[0]);
+                p.sendMessage(toSearch.getName() + "'s level for " + PerksManager.Perk.getByName(args[1]).instance.getKey() + ": " + up.getLevel(toSearch));
+            } else if(label.equals("setperkupgradelevel")) {
+                // /getperkupgradelevel <player> <upgradeableperk>
+                if(!p.hasPermission("manageperks")) {
+                    p.sendMessage(ChatColor.RED + "You don't have permission!");
+                    return true;
+                }
+                if(args.length < 3 || Bukkit.getPlayer(args[0]) == null || PerksManager.Perk.getByName(args[1]) == null || !(PerksManager.Perk.getByName(args[1]).instance instanceof Upgradable) || !Util.isInteger(args[2])) {
+                    p.sendMessage(ChatColor.RED + "Usage: /setperkupgradelevel <player> <upgradeableperk> <level>");
+                    return true;
+                }
+                Upgradable up = (Upgradable) PerksManager.Perk.getByName(args[1]).instance;
+                Player toSearch = Bukkit.getPlayer(args[0]);
+                int num = Integer.parseInt(args[2]);
+                up.setLevel(toSearch, num);
+                p.sendMessage("Set " + toSearch.getName() + "'s level for " + PerksManager.Perk.getByName(args[1]).instance.getKey() + " to " + up.getLevel(toSearch));
+                toSearch.sendMessage(ChatColor.AQUA + "Your perk level for " + PerksManager.Perk.getByName(args[1]).instance.getKey() + " was set to " + up.getLevel(toSearch) + " by an admin.");
             }
         }
 
@@ -598,6 +639,22 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
         } else if(alias.equals("addtag")) {
             if(args.length == 1) {
                 StringUtil.copyPartialMatches(args[0], List.of("int", "string"), completions);
+                return completions;
+            }
+        } else if(alias.equals("setperkupgradelevel")) {
+            if(args.length == 1) {
+                StringUtil.copyPartialMatches(args[0], Bukkit.getOnlinePlayers().stream().map(pl -> pl.getName()).collect(Collectors.toList()), completions);
+                return completions;
+            } else if(args.length == 2) {
+                StringUtil.copyPartialMatches(args[1], Arrays.stream(PerksManager.Perk.values()).filter(per -> per.instance instanceof Upgradable).map(per -> per.instance.getKey()).collect(Collectors.toList()), completions);
+                return completions;
+            }
+        } else if(alias.equals("getperkupgradelevel")) {
+            if(args.length == 1) {
+                StringUtil.copyPartialMatches(args[0], Bukkit.getOnlinePlayers().stream().map(pl -> pl.getName()).collect(Collectors.toList()), completions);
+                return completions;
+            } else if(args.length == 2) {
+                StringUtil.copyPartialMatches(args[1], Arrays.stream(PerksManager.Perk.values()).filter(per -> per.instance instanceof Upgradable).map(per -> per.instance.getKey()).collect(Collectors.toList()), completions);
                 return completions;
             }
         }

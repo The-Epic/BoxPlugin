@@ -72,7 +72,15 @@ commands:
   debug:
     usage: /<command>
     description: more logging
+  getperkupgradelevel:
+    usage: /<command>
+    description: get perk upgrade level
+  setperkupgradelevel:
+    usage: /<command>
+    description: set perk upgrade level
 permissions:
+  boxplugin.manageperks:
+    default: false
   boxplugin.crash:
     default: false
   boxplugin.reload:

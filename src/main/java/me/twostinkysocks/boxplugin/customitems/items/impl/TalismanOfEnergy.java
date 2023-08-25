@@ -5,21 +5,19 @@ import me.twostinkysocks.boxplugin.BoxPlugin;
 import me.twostinkysocks.boxplugin.customitems.CustomItemsMain;
 import me.twostinkysocks.boxplugin.customitems.items.CustomItem;
 import me.twostinkysocks.boxplugin.manager.PerksManager;
-import me.twostinkysocks.boxplugin.util.Laser;
+import me.twostinkysocks.boxplugin.util.Util;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityLiving;
 import org.bukkit.*;
-import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_19_R1.entity.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.block.Action;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftHumanEntity;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftLivingEntity;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.weather.LightningStrikeEvent;
 
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.UUID;
 
 public class TalismanOfEnergy extends CustomItem {
 
@@ -62,6 +60,7 @@ public class TalismanOfEnergy extends CustomItem {
         setEntityDamageByEntity(e -> {
             Player p = (Player) e.getDamager();
             if(p.hasPermission("customitems.cooldownbypass") || !cooldown.containsKey(p.getUniqueId()) || cooldown.get(p.getUniqueId()) < System.currentTimeMillis()) {
+                // only trigger logic if off cooldown
                 logic(e, p);
             }
         });
@@ -74,9 +73,11 @@ public class TalismanOfEnergy extends CustomItem {
             DamageSource reason = DamageSource.a(((CraftHumanEntity)e.getDamager()).getHandle()); // DamageSource.playerAttack()
             nmsEntity.W = 0; // set no damage ticks to 0
 //            System.out.println(avg);
+            if(e.getEntity() instanceof Player && ((Player) e.getEntity()).isBlocking()) {
+                ((Player) e.getEntity()).setCooldown(Material.SHIELD, 30);
+            }
+            Util.debug((Player) e.getDamager(), "Dealt " + avg + " damage with smite");
             nmsEntity.a(reason, (float)avg);
-            Player p = (Player) e.getDamager();
-            cooldown.put(p.getUniqueId(), System.currentTimeMillis() + (long)(10000 * (BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_COOLDOWN_REDUCTION) ? 0.5 : 1))); // 10 seconds
             playEffects(e);
         }
     }
@@ -110,17 +111,25 @@ public class TalismanOfEnergy extends CustomItem {
     }
 
     private void logic(EntityDamageByEntityEvent e, Player p) {
+        // if player has not hit anything yet
         if(!hits.containsKey(p.getUniqueId())) {
+            // make sure inner hit array is there
             ArrayList<Hit> list = new ArrayList<>();
             hits.put(p.getUniqueId(), list);
         }
+        // get the hits array
         ArrayList<Hit> pHits = hits.get(p.getUniqueId());
-        if(pHits.size() >= 2) {
+        // hits +1
+        pHits.add(new Hit(e.getDamage(), System.currentTimeMillis()));
+        // if there are 3+ hits (this time is the third hit)
+        if(pHits.size() >= 3) {
+            // min starts as very big and max is very small
             long min = Long.MAX_VALUE;
             long max = Long.MIN_VALUE;
             long avg = 0;
             for(Hit hit : pHits) {
 //                System.out.println(hit.getTimestamp());
+                // if the current hit happened before
                 if(hit.getTimestamp() < min) min = hit.getTimestamp();
                 if(hit.getTimestamp() > max) max = hit.getTimestamp();
                 avg += hit.getDamage();
@@ -130,6 +139,7 @@ public class TalismanOfEnergy extends CustomItem {
 //            System.out.println(diff);
             if(diff < 3000) { // should electrocute
                 long finalAvg = avg;
+                cooldown.put(p.getUniqueId(), System.currentTimeMillis() + (long)(10000 * (BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_COOLDOWN_REDUCTION) ? 0.5 : 1))); // 10 seconds
                 Bukkit.getScheduler().runTaskLater(BoxPlugin.instance, () -> {
                     electrocute(finalAvg, e);
                     hits.remove(p.getUniqueId());
@@ -139,7 +149,6 @@ public class TalismanOfEnergy extends CustomItem {
                 pHits.remove(0);
             }
         }
-        pHits.add(new Hit(e.getDamage(), System.currentTimeMillis()));
 
     }
 }

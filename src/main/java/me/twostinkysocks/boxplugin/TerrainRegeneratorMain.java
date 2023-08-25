@@ -15,18 +15,11 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import io.lumine.mythic.bukkit.MythicBukkit;
 import io.lumine.mythic.core.mobs.ActiveMob;
-import me.twostinkysocks.boxplugin.BoxPlugin;
-import me.twostinkysocks.boxplugin.event.PlayerBoxXpUpdateEvent;
 import me.twostinkysocks.boxplugin.util.MythicMobsIntegration;
 import net.minecraft.nbt.MojangsonParser;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.world.entity.EntityInsentient;
 import net.minecraft.world.entity.EntityLiving;
-import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.entity.ai.BehaviorController;
-import net.minecraft.world.entity.ai.behavior.BehaviorAttackTargetSet;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.monster.EntitySilverfish;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -34,31 +27,27 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.craftbukkit.v1_19_R1.block.impl.CraftCommand;
-import org.bukkit.craftbukkit.v1_19_R1.entity.*;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftCreature;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftWarden;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
-import org.bukkit.event.entity.SlimeSplitEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.StringUtil;
-import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.naming.Name;
-import javax.swing.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 public final class TerrainRegeneratorMain implements Listener, CommandExecutor, TabCompleter {
@@ -131,8 +120,31 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
                             timerseconds * 20,
                             timerseconds * 20
                     ));
+            tasks.add(Bukkit.getScheduler()
+                    .runTaskTimer(
+                            BoxPlugin.instance,
+                            () -> this.schematicPreSpawn((String) schem),
+                            (timerseconds * 20) - (20*10),
+                            timerseconds * 20
+                    )
+            );
             BoxPlugin.instance.getLogger().info("Started timer for schematic " + schem);
         }
+
+        if(this.config.getConfigurationSection("randomizedschematics.groups") != null ) {
+            for(Object group : this.config.getConfigurationSection("randomizedschematics.groups").getKeys(false).toArray()) {
+                int timerseconds = this.config.getInt("randomizedschematics.groups." + group + ".timer-seconds");
+                tasks.add(Bukkit.getScheduler()
+                        .runTaskTimer(
+                                BoxPlugin.instance,
+                                () -> this.regenerateRandomly((String) group),
+                                timerseconds * 20,
+                                timerseconds * 20
+                        ));
+                BoxPlugin.instance.getLogger().info("Started timer for schematic group " + group);
+            }
+        }
+
         // entities
         for(Object entity : this.config.getConfigurationSection("entities").getKeys(false).toArray()) {
             int timerseconds = this.config.getInt("entities." + entity + ".timer-seconds");
@@ -218,8 +230,8 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
                                         }
                                     }
                                     CraftCreature creature = (CraftCreature) entity;
-                                    if(creature.getHandle() instanceof Warden) {
-                                        Warden warden = (Warden) creature.getHandle();
+                                    if(creature.getHandle() instanceof net.minecraft.world.entity.monster.warden.Warden) {
+                                        net.minecraft.world.entity.monster.warden.Warden warden = (net.minecraft.world.entity.monster.warden.Warden) creature.getHandle();
                                         warden.k(((CraftPlayer) nearest).getHandle()); // setAttackTarget
                                     } else {
                                         creature.setTarget(nearest);
@@ -298,6 +310,12 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
         }
     }
 
+    private void schematicPreSpawn(String name) {
+        if(this.config.getString("schematics." + name + ".respawn-pre-broadcast") != null) {
+            Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', this.config.getString("schematics." + name + ".respawn-pre-broadcast")));
+        }
+    }
+
     private void regenerateNew(File schematic) {
         if(schematic.exists()) {
             String filename = schematic.getName().replace(".schem", "");
@@ -329,6 +347,54 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
             }
         } else {
             BoxPlugin.instance.getLogger().severe("Schematic: " + schematic + " was not found");
+        }
+    }
+
+    private void regenerateRandomly(String group) {
+        List<File> schematicFiles = new ArrayList<>(
+                this.config.getStringList("randomizedschematics.groups." + group + ".schematics")
+        ).stream().map(name -> new File(BoxPlugin.instance.getDataFolder(), "schematics/" + name + ".schem")).collect(Collectors.toList());
+        List<Location> locations = new ArrayList<>(
+                this.config.getStringList("randomizedschematics.groups." + group + ".locations")
+        ).stream().map(coordsstring -> {
+            List<Integer> vals = Arrays.stream(coordsstring.split(",")).map(val -> Integer.parseInt(val.trim())).collect(Collectors.toList());
+            return new Location(Bukkit.getWorld(this.config.getString("randomizedschematics.groups." + group + ".world")), vals.get(0), vals.get(1), vals.get(2));
+        }).collect(Collectors.toList());
+        Collections.shuffle(locations, ThreadLocalRandom.current());
+        for(int i = 0; i < locations.size(); i++) {
+            File schematic = schematicFiles.get(i);
+            Location loc = locations.get(i);
+            if(schematic.exists()) {
+                String filename = schematic.getName().replace(".schem", "");
+                Clipboard clipboard;
+                ClipboardFormat format = ClipboardFormats.findByFile(schematic);
+                try(ClipboardReader reader = format.getReader(new FileInputStream(schematic))) {
+                    clipboard = reader.read();
+                    EditSession editSession = WorldEdit.getInstance().newEditSession(BukkitAdapter.adapt(Bukkit.getWorld(this.config.getString("randomizedschematics.groups." + group + ".world"))));
+                    Operation operation = new ClipboardHolder(clipboard)
+                            .createPaste(editSession)
+                            .to(BlockVector3.at(
+                                    loc.getX(),
+                                    loc.getY(),
+                                    loc.getZ()
+                            ))
+                            .copyEntities(this.config.getBoolean("randomizedschematics.types." + filename + ".includeentities"))
+                            .ignoreAirBlocks(this.config.getBoolean("randomizedschematics.types." + filename + ".ignoreairblocks"))
+                            .build();
+                    Operations.complete(operation);
+                    editSession.flushSession();
+                    if(this.config.getString("randomizedschematics.types." + filename + ".command") != null) {
+                        Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), this.config.getString("randomizedschematics.types." + filename + ".command"));
+                    }
+                } catch (IOException | WorldEditException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                BoxPlugin.instance.getLogger().severe("Schematic: " + schematic + " was not found");
+            }
+        }
+        if(this.config.getString("randomizedschematics.groups." + group + ".respawn-broadcast") != null) {
+            Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', this.config.getString("randomizedschematics.groups." + group + ".respawn-broadcast")));
         }
     }
 
@@ -403,19 +469,19 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
 
     @EventHandler
     public void onEntityTarget(EntityTargetEvent e) {
-//        if(e.getEntity() instanceof Warden && e.getTarget() instanceof Silverfish) {
-//            Warden nmsWarden = ((CraftWarden) e.getEntity()).getHandle();
-//            nmsWarden.k((EntityLiving) null);
-//            e.setTarget(null);
-//            e.setCancelled(true);
-//        }
-//        if(e.getEntity() instanceof Silverfish && e.getTarget() instanceof Warden) {
-//            Warden nmsWarden = ((CraftWarden) e.getTarget()).getHandle();
-//            nmsWarden.k((EntityLiving) null);
-//            nmsWarden.dy().b(MemoryModuleType.o);
-//            e.setTarget(null);
-//            e.setCancelled(true);
-//        }
+        if(e.getEntity() instanceof Warden && e.getTarget() instanceof Silverfish) {
+            net.minecraft.world.entity.monster.warden.Warden nmsWarden = ((CraftWarden) e.getEntity()).getHandle();
+            nmsWarden.k((EntityLiving) null);
+            e.setTarget(null);
+            e.setCancelled(true);
+        }
+        if(e.getEntity() instanceof Silverfish && e.getTarget() instanceof Warden) {
+            net.minecraft.world.entity.monster.warden.Warden nmsWarden = ((CraftWarden) e.getTarget()).getHandle();
+            nmsWarden.k((EntityLiving) null);
+            nmsWarden.dy().b(MemoryModuleType.o);
+            e.setTarget(null);
+            e.setCancelled(true);
+        }
         for(Entity entity : new ArrayList<>(toDeAgro)) {
             if(entity.getUniqueId().equals(e.getEntity().getUniqueId())) {
                 e.setTarget(null);
