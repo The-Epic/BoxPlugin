@@ -75,6 +75,20 @@ public class Listeners implements Listener {
                     for(CustomItem ci : items) {
                         if(ci.getItemId().equals("TALISMAN_OF_ENERGY")) {
                             ci.getEntityDamageByEntity().accept(e);
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        if(e.getEntity() instanceof Player) {
+            Player damaged = (Player) e.getEntity();
+            for(ItemStack item : damaged.getInventory().getContents()) {
+                if(item != null && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "ITEM_ID"), PersistentDataType.STRING)&& item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "ITEM_ID"), PersistentDataType.STRING).equals("WOLF_PACK")) {
+                    for(CustomItem ci : items) {
+                        if(ci.getItemId().equals("WOLF_PACK")) {
+                            ci.getEntityDamageByEntity().accept(e);
                             return;
                         }
                     }
@@ -153,7 +167,7 @@ public class Listeners implements Listener {
                     for(PotionEffect effect : effects) entity.removePotionEffect(effect.getType());
                     Bukkit.getScheduler().runTaskLater(BoxPlugin.instance, () -> {
                         for(PotionEffect effect : effects) entity.addPotionEffect(effect);
-                    }, 20 * 20);
+                    }, 20 * 30);
                 }
             }
         }

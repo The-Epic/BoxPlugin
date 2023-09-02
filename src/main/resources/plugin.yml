@@ -78,6 +78,9 @@ commands:
   setperkupgradelevel:
     usage: /<command>
     description: set perk upgrade level
+  mmxp:
+    usage: /<command>
+    description: spawn mythic mob with xp
 permissions:
   boxplugin.manageperks:
     default: false
@@ -98,6 +101,9 @@ permissions:
     default: false
   terrainregenerator.regenschematic:
     description: regen schematics
+    default: false
+  terrainregenerator.mmxp:
+    description: mmxp
     default: false
   boxplugin.key.common:
     description: give self common key

@@ -27,7 +27,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class MythicMobsIntegration {
+
     public static UUID spawnWithData(String id, int xp, Location spawnloc) {
+        return spawnWithData(id, xp, spawnloc, false);
+    }
+    public static UUID spawnWithData(String id, int xp, Location spawnloc, boolean ignoreMaxRadius) {
         CommandSender sender = Bukkit.getConsoleSender();
         String[] args = new String[] {
             id, "1", (spawnloc.getWorld().getName() + "," + spawnloc.getX() + "," + spawnloc.getY() + "," + spawnloc.getZ())
@@ -162,6 +166,9 @@ public class MythicMobsIntegration {
                     entity.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING, id);
                     entity.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "respawningmob"), PersistentDataType.INTEGER, 1);
                     if(xp != 0) entity.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER, xp);
+                    if(ignoreMaxRadius) {
+                        entity.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "ignoremaxradius"), PersistentDataType.INTEGER, 1);
+                    }
                     return spawnedMob.getUniqueId();
                 }
 
@@ -192,6 +199,9 @@ public class MythicMobsIntegration {
                         mm.applySpawnModifiers(am);
                         entity.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "respawningmobid"), PersistentDataType.STRING, id);
                         entity.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "respawningmob"), PersistentDataType.INTEGER, 1);
+                        if(ignoreMaxRadius) {
+                            entity.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "ignoremaxradius"), PersistentDataType.INTEGER, 1);
+                        }
                         if(xp != 0) entity.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "xp"), PersistentDataType.INTEGER, xp);
                     }
                     return entity.getUniqueId();

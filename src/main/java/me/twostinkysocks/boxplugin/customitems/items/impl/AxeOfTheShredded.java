@@ -104,7 +104,7 @@ public class AxeOfTheShredded extends CustomItem {
 //                (((CraftLivingEntity) damageable).getHandle()).a((new EntityDamageSource("thorns", ((CraftPlayer)p).getHandle())), 11); // same as railgun
                 damageable.damage(11, p);
                 p.playSound(p.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 0f);
-                axe.getArmorStand().remove();
+                //axe.getArmorStand().remove();
             }
         }
     }

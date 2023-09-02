@@ -77,6 +77,13 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
 
 //    private StateFlag entityInteract;
 
+    @Override
+    public void onDisable() {
+        for(Player p : Bukkit.getOnlinePlayers()) {
+            p.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "PREVIOUS_HEALTH"), PersistentDataType.DOUBLE, p.getHealth());
+        }
+    }
+
     public void load() {
         blockExperience = new HashMap<>();
         entityExperience = new HashMap<>();
@@ -172,6 +179,15 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                 }
             }
         }, 0, 100);
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            for(World world : Bukkit.getWorlds()) {
+                for(Entity entity : world.getEntities()) {
+                    if(entity instanceof Slime) { // slime and magma
+                        entity.remove();
+                    }
+                }
+            }
+        }, 0, 20 * 60 * 60 * 2);
         for(World world : Bukkit.getWorlds()) {
             for(Entity entity : world.getEntities()) {
                 if(entity instanceof Slime) { // slime and magma

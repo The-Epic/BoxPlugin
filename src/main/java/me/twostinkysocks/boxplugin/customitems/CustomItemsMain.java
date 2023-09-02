@@ -50,6 +50,8 @@ public class CustomItemsMain implements CommandExecutor, TabCompleter {
         registerItem(new HealSpear(this));
         registerItem(new Hyperion(this));
         registerItem(new MilkPotion(this));
+        registerItem(new ThrowableLava(this));
+        registerItem(new WolfPack(this));
         BoxPlugin.instance.getLogger().info("Loaded custom items!");
     }
 

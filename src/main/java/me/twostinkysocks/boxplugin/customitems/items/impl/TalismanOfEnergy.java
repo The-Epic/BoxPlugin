@@ -23,6 +23,8 @@ public class TalismanOfEnergy extends CustomItem {
 
 
     private HashMap<UUID, Long> cooldown;
+    // HashMap<PlayerUUID, HashMap<EntityUUID, Time>
+    private HashMap<UUID, HashMap<UUID, Long>> newCooldown;
     private HashMap<UUID, Integer> boltTimers;
     // uuid: map of hits (Damage, Timestamp)
     private HashMap<UUID, ArrayList<Hit>> hits;
@@ -55,14 +57,19 @@ public class TalismanOfEnergy extends CustomItem {
                 "§8Cooldown: §a10s"
         );
         cooldown = new HashMap<>();
+        newCooldown = new HashMap<>();
         hits = new HashMap<>();
         boltTimers = new HashMap<>();
         setEntityDamageByEntity(e -> {
             Player p = (Player) e.getDamager();
-            if(p.hasPermission("customitems.cooldownbypass") || !cooldown.containsKey(p.getUniqueId()) || cooldown.get(p.getUniqueId()) < System.currentTimeMillis()) {
+            if(p.hasPermission("customitems.cooldownbypass") || !newCooldown.containsKey(p.getUniqueId()) || newCooldown.get(p.getUniqueId()) == null || !newCooldown.get(p.getUniqueId()).containsKey(e.getEntity().getUniqueId()) || newCooldown.get(p.getUniqueId()).get(e.getEntity().getUniqueId()) < System.currentTimeMillis()) {
                 // only trigger logic if off cooldown
                 logic(e, p);
             }
+//            if(p.hasPermission("customitems.cooldownbypass") || !cooldown.containsKey(p.getUniqueId()) || cooldown.get(p.getUniqueId()) < System.currentTimeMillis()) {
+//                // only trigger logic if off cooldown
+//                logic(e, p);
+//            }
         });
     }
 
@@ -139,7 +146,14 @@ public class TalismanOfEnergy extends CustomItem {
 //            System.out.println(diff);
             if(diff < 3000) { // should electrocute
                 long finalAvg = avg;
-                cooldown.put(p.getUniqueId(), System.currentTimeMillis() + (long)(10000 * (BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_COOLDOWN_REDUCTION) ? 0.5 : 1))); // 10 seconds
+                if(!newCooldown.containsKey(p.getUniqueId()) || !newCooldown.get(p.getUniqueId()).containsKey(e.getEntity().getUniqueId())) {
+                    HashMap<UUID, Long> cd = new HashMap<>();
+                    cd.put(e.getEntity().getUniqueId(), System.currentTimeMillis() + (long)(10000 * (BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_COOLDOWN_REDUCTION) ? 0.5 : 1)));
+                    newCooldown.put(p.getUniqueId(), cd);
+                } else {
+                    newCooldown.get(p.getUniqueId()).put(e.getEntity().getUniqueId(), System.currentTimeMillis() + (long)(10000 * (BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_COOLDOWN_REDUCTION) ? 0.5 : 1)));
+                }
+                //cooldown.put(p.getUniqueId(), System.currentTimeMillis() + (long)(10000 * (BoxPlugin.instance.getPerksManager().getSelectedMegaPerks(p).contains(PerksManager.MegaPerk.MEGA_COOLDOWN_REDUCTION) ? 0.5 : 1))); // 10 seconds
                 Bukkit.getScheduler().runTaskLater(BoxPlugin.instance, () -> {
                     electrocute(finalAvg, e);
                     hits.remove(p.getUniqueId());

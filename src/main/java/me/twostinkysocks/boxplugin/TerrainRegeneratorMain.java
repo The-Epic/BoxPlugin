@@ -16,15 +16,13 @@ import com.sk89q.worldedit.session.ClipboardHolder;
 import io.lumine.mythic.bukkit.MythicBukkit;
 import io.lumine.mythic.core.mobs.ActiveMob;
 import me.twostinkysocks.boxplugin.util.MythicMobsIntegration;
+import me.twostinkysocks.boxplugin.util.Util;
 import net.minecraft.nbt.MojangsonParser;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.entity.EntityLiving;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import org.bukkit.*;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
+import org.bukkit.command.*;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.v1_19_R1.entity.CraftCreature;
@@ -65,6 +63,8 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
         toDeAgro = new ArrayList<>();
         spawnedEntities = new HashMap<String, ArrayList<UUID>>();
         BoxPlugin.instance.getCommand("terrainregenerator").setExecutor(this);
+        BoxPlugin.instance.getCommand("mmxp").setExecutor(this);
+        BoxPlugin.instance.getCommand("mmxp").setTabCompleter(this);
         BoxPlugin.instance.getCommand("terrainregenerator").setTabCompleter(this);
         BoxPlugin.instance.getCommand("regenschematic").setExecutor(this);
         BoxPlugin.instance.getCommand("regenschematic").setTabCompleter(this);
@@ -431,6 +431,36 @@ public final class TerrainRegeneratorMain implements Listener, CommandExecutor, 
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        if(label.equals("mmxp")) {
+            // mmxp <name> <World>,<x>,<y>,<z>
+            if(args.length < 2) {
+                sender.sendMessage(ChatColor.RED + "/mmxp <name> <World>,<x>,<y>,<z>");
+                return true;
+            }
+            if(!sender.hasPermission("terrainregenerator.mmxp") && !(sender instanceof ConsoleCommandSender)) {
+                sender.sendMessage(ChatColor.RED + "You don't have permission!");
+                return true;
+            }
+            String name = args[0];
+            String[] loc = args[1].split(",");
+            if(loc.length < 4) {
+                sender.sendMessage(ChatColor.RED + "/mmxp <name> <World>,<x>,<y>,<z>");
+                return true;
+            }
+            String world = loc[0];
+            if(Bukkit.getWorld(world) == null) {
+                sender.sendMessage(ChatColor.RED + "/mmxp <name> <World>,<x>,<y>,<z>");
+                return true;
+            }
+            if(!Util.isInteger(loc[1]) || !Util.isInteger(loc[2]) || !Util.isInteger(loc[3])) {
+                sender.sendMessage(ChatColor.RED + "/mmxp <name> <World>,<x>,<y>,<z>");
+                return true;
+            }
+            int x = Integer.parseInt(loc[1]);
+            int y = Integer.parseInt(loc[2]);
+            int z = Integer.parseInt(loc[3]);
+            MythicMobsIntegration.spawnWithData(name, this.config.getInt("entities." + name + ".xp"), new Location(Bukkit.getWorld(world), x, y, z), true);
+        }
         if(sender instanceof Player) {
             Player p = (Player) sender;
             if(label.equals("terrainregenerator")) {

@@ -16,7 +16,7 @@ public class CompressibleQuartz extends Compressible {
 
     @Override
     public int getInput() {
-        return 128;
+        return 80;
     }
 
     @Override
