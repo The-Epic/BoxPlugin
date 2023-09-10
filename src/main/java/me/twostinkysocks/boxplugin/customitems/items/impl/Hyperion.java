@@ -104,25 +104,25 @@ public class Hyperion extends CustomItem {
                             if (ticks < 5) return;
                             else if (ticks <= 7) {
                                 rad = 4;
-                                multiplier = 2;
+                                multiplier = 0.5;
                             } else if (ticks <= 10) {
                                 rad = 5;
-                                multiplier = 2.5;
+                                multiplier = 1;
                             }
                             else if (ticks <= 14) {
                                 rad = 6;
-                                multiplier = 3.0;
+                                multiplier = 1.5;
                             }
                             else if (ticks <= 18) {
                                 rad = 7;
-                                multiplier = 3.5;
+                                multiplier = 2;
                             }
                             else if (ticks <= 22) {
                                 rad = 8;
-                                multiplier = 4.0;
+                                multiplier = 2.5;
                             } else {
                                 rad = 9;
-                                multiplier = 4.5;
+                                multiplier = 3;
                             }
                             Util.debug(p, "Explosion level: " + multiplier);
                             Util.debug(p, "Explosion yield: " + rad);

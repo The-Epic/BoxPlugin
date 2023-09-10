@@ -9,12 +9,14 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
@@ -166,5 +168,44 @@ public class Util {
             nms.eZ();
         }
         target.damage(damage, source);
+    }
+
+    /**
+     *
+     * @param e The event
+     * @param dropChancePerSlot drop chance per slot (0.5 is 50% chance to drop that item)
+     */
+    public static void dropPercent(PlayerDeathEvent e, double dropChancePerSlot) {
+        Player target = e.getEntity();
+        int outof = (int)(Math.round(1/dropChancePerSlot));
+        Util.debug(target, "Losing " + (int)(dropChancePerSlot*100) + "% of items");
+        e.setKeepInventory(true);
+        e.getDrops().clear();
+        for(int i = 0; i < e.getEntity().getInventory().getSize(); i++) {
+            int rand = (int)(Math.random() * (outof) + 1);
+            if(rand == 1) {
+                if(e.getEntity().getInventory().getItem(i) != null) {
+                    Util.debug(target, "Lost " + e.getEntity().getInventory().getItem(i).getType());
+                    e.getDrops().add(e.getEntity().getInventory().getItem(i));
+                    e.getEntity().getInventory().setItem(i, null);
+                }
+            }
+        }
+        try {
+            ArrayList<ItemStack> armor = new ArrayList<>(List.of(e.getEntity().getInventory().getArmorContents()));
+            for(int i = 0; i < e.getEntity().getInventory().getArmorContents().length; i++) {
+                int rand = (int)(Math.random() * (outof) + 1);
+                if(rand == 1) {
+                    if(e.getEntity().getInventory().getArmorContents()[i] != null) {
+                        Util.debug(target, "Lost " + e.getEntity().getInventory().getArmorContents()[i].getType());
+                        e.getDrops().add(e.getEntity().getInventory().getArmorContents()[i]);
+                        armor.set(i, null);
+                    }
+                }
+            }
+            e.getEntity().getInventory().setArmorContents(armor.toArray(new ItemStack[4]));
+        } catch (NullPointerException ex) {
+            // don't care if armor is null
+        }
     }
 }
