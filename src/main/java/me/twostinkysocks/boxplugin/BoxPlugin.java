@@ -12,15 +12,14 @@ import me.twostinkysocks.boxplugin.customitems.CustomItemsMain;
 import me.twostinkysocks.boxplugin.event.Listeners;
 import me.twostinkysocks.boxplugin.event.PacketListeners;
 import me.twostinkysocks.boxplugin.event.PlayerBoxXpUpdateEvent;
-import me.twostinkysocks.boxplugin.manager.PVPManager;
-import me.twostinkysocks.boxplugin.manager.PerksManager;
-import me.twostinkysocks.boxplugin.manager.ScoreboardManager;
-import me.twostinkysocks.boxplugin.manager.XPManager;
+import me.twostinkysocks.boxplugin.manager.*;
 import me.twostinkysocks.boxplugin.perks.Upgradable;
+import me.twostinkysocks.boxplugin.util.MarketJob;
 import me.twostinkysocks.boxplugin.util.PlaceholderAPIExpansion;
 import me.twostinkysocks.boxplugin.util.Util;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -32,8 +31,11 @@ import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
+import org.quartz.*;
+import org.quartz.impl.StdSchedulerFactory;
 import su.nexmedia.engine.api.config.JYML;
 import su.nightexpress.excellentcrates.ExcellentCrates;
 import su.nightexpress.excellentcrates.key.CrateKey;
@@ -69,6 +71,10 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
 
     private Compressor compressor;
 
+    private MarketManager marketManager;
+
+    private Economy econ = null;
+
     // player who killed, <player who was killed, times>
     private HashMap<UUID, HashMap<UUID, Integer>> killsInHour;
 
@@ -82,6 +88,17 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
         for(Player p : Bukkit.getOnlinePlayers()) {
             p.getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "PREVIOUS_HEALTH"), PersistentDataType.DOUBLE, p.getHealth());
         }
+    }
+    private boolean setupEconomy() {
+        if (getServer().getPluginManager().getPlugin("Vault") == null) {
+            return false;
+        }
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        if (rsp == null) {
+            return false;
+        }
+        econ = rsp.getProvider();
+        return econ != null;
     }
 
     public void load() {
@@ -133,9 +150,12 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
         xpManager = new XPManager();
         perksManager = new PerksManager();
         compressor = new Compressor();
+        marketManager = new MarketManager();
 
         excellentCrates = (ExcellentCrates) getServer().getPluginManager().getPlugin("ExcellentCrates");
         keyManager = excellentCrates.getKeyManager();
+
+        getMarketManager().initializeMarketMultiplier();
 
         getCommand("boxgivecommonkey").setExecutor(this);
         getCommand("sus").setExecutor(this);
@@ -162,6 +182,8 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
         getCommand("getperkupgradelevel").setTabCompleter(this);
         getCommand("setperkupgradelevel").setExecutor(this);
         getCommand("setperkupgradelevel").setTabCompleter(this);
+        getCommand("openbank").setExecutor(this);
+        getCommand("setmarketmultipier").setExecutor(this);
         getServer().getPluginManager().registerEvents(new Listeners(), this);
         load();
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -198,6 +220,33 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
         new PacketListeners();
         new TerrainRegeneratorMain().onEnable();
         new CustomItemsMain().onEnable();
+
+
+        JobKey jobKeyA = new JobKey("market", "group1");
+        JobDetail jobA = JobBuilder.newJob(MarketJob.class).withIdentity(jobKeyA)
+                .build();
+
+        Trigger trigger1 = TriggerBuilder
+                .newTrigger()
+                .withIdentity("dummyTriggerName1", "group1")
+                .withSchedule(CronScheduleBuilder.cronSchedule("43 27 */4 * * ?")) // every 4 hours offset by random time
+//                .withSchedule(CronScheduleBuilder.cronSchedule("0 * * * * ?")) // every minute
+                .build();
+
+        Scheduler scheduler;
+        try {
+            scheduler = new StdSchedulerFactory().getScheduler();
+            scheduler.start();
+            scheduler.scheduleJob(jobA, trigger1);
+            System.out.println("Started market task");
+        } catch (SchedulerException e) {
+            e.printStackTrace();
+        }
+        if (!setupEconomy()) {
+            getLogger().severe(String.format("[%s] - Disabled due to no Vault dependency found!", getDescription().getName()));
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
     }
 //
 //    @Override
@@ -239,6 +288,14 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
 
     public PerksManager getPerksManager() {
         return perksManager;
+    }
+
+    public Economy getEconomy() {
+        return econ;
+    }
+
+    public MarketManager getMarketManager() {
+        return marketManager;
     }
 
     public KeyManager getKeyManager() {return keyManager;}
@@ -400,11 +457,9 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                         return true;
                     }
                 }
+            } else if(label.equals("openbank")) {
+                getMarketManager().openGui(p);
             } else if(label.equals("openperkgui")) {
-                ChestGui gui = new ChestGui(6, "Perks");
-                OutlinePane pane = new OutlinePane(0, 0, 9, 6);
-                pane.addItem(new GuiItem(new ItemStack(Material.SKELETON_SKULL)));
-                gui.addPane(pane);
                 getPerksManager().openMainGui(p);
             } else if(label.equals("getownedperks")) {
                 p.sendMessage(String.join("\n", getPerksManager().getPurchasedPerks(p).stream().map(pe -> pe.instance.getKey()).collect(Collectors.toList())));
@@ -521,7 +576,7 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                     p.sendMessage(ChatColor.RED + "You have no rewards to claim!");
                 } else {
                     int total = BoxPlugin.instance.getXpManager().getCumulativeLevelUpReward(BoxPlugin.instance.getXpManager().getLevel(p));
-                    HashMap<Integer, ItemStack> toDrop = p.getInventory().addItem(Util.gigaCoinArray(total));
+                    HashMap<Integer, ItemStack> toDrop = p.getInventory().addItem(Util.itemArray(total, Util::gigaCoin));
                     toDrop.forEach((index, item) -> {
                         Item entity = (Item) p.getWorld().spawnEntity(p.getLocation(), EntityType.DROPPED_ITEM);
                         entity.setItemStack(item);
@@ -606,6 +661,18 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                 up.setLevel(toSearch, num);
                 p.sendMessage("Set " + toSearch.getName() + "'s level for " + PerksManager.Perk.getByName(args[1]).instance.getKey() + " to " + up.getLevel(toSearch));
                 toSearch.sendMessage(ChatColor.AQUA + "Your perk level for " + PerksManager.Perk.getByName(args[1]).instance.getKey() + " was set to " + up.getLevel(toSearch) + " by an admin.");
+            } else if(label.equals("setmarketmultipier")) {
+                if(!p.hasPermission("boxplugin.setmarketmultiplier")) {
+                    p.sendMessage(ChatColor.RED + "You don't have permission!");
+                    return true;
+                }
+                if(args[0] == null || !Util.isDouble(args[0])) {
+                    p.sendMessage(ChatColor.RED + "Bad input!");
+                    return true;
+                }
+                double d = Double.parseDouble(args[0]);
+                getMarketManager().setMarketMultiplier(d);
+                p.sendMessage(ChatColor.GREEN + "Set multiplier to " + d);
             }
         }
 

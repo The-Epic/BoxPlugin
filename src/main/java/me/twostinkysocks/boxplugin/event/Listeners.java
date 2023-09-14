@@ -428,6 +428,7 @@ public class Listeners implements Listener {
             BoxPlugin.instance.getPvpManager().resetStreak(target);
             BoxPlugin.instance.getScoreboardManager().queueUpdate(target);
             Util.dropPercent(e, 0.15);
+            target.sendMessage(ChatColor.RED + "You lost 15% of your items from dying to a non-player!");
             return;
         }
 
@@ -470,6 +471,7 @@ public class Listeners implements Listener {
         double percentChance = Math.max(Math.min(1.0, dropChance / 100.0), 0.05);
 
         Util.dropPercent(e, percentChance);
+        target.sendMessage(ChatColor.RED + "You lost" + (int)(100*percentChance) + "% of your items due to the level difference between you and the other player!");
         // skulls
         e.getDrops().add(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
         cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
@@ -529,7 +531,7 @@ public class Listeners implements Listener {
 
         if(BoxPlugin.instance.getXpManager().getLevel(p)%5 == 0&& BoxPlugin.instance.getXpManager().convertXPToLevel(e.getBeforeXP())%5 != 0) {
             int toGive = BoxPlugin.instance.getXpManager().getLevelUpRewardLevelToLevel(BoxPlugin.instance.getXpManager().convertXPToLevel(e.getBeforeXP()), BoxPlugin.instance.getXpManager().getLevel(p));
-            HashMap<Integer, ItemStack> toDrop = p.getInventory().addItem(Util.gigaCoinArray(toGive));
+            HashMap<Integer, ItemStack> toDrop = p.getInventory().addItem(Util.itemArray(toGive, Util::gigaCoin));
             toDrop.forEach((index, item) -> {
                 Item entity = (Item) p.getWorld().spawnEntity(p.getLocation(), EntityType.DROPPED_ITEM);
                 entity.setItemStack(item);
@@ -537,7 +539,7 @@ public class Listeners implements Listener {
             p.sendMessage(ChatColor.GOLD + "Earned " + ChatColor.BOLD + toGive + " Giga Coins " + ChatColor.GOLD + "from leveling up!");
         } else if(Math.abs(BoxPlugin.instance.getXpManager().getLevel(p)-BoxPlugin.instance.getXpManager().convertXPToLevel(e.getBeforeXP()))>=5) {
             int toGive = BoxPlugin.instance.getXpManager().getLevelUpRewardLevelToLevel(BoxPlugin.instance.getXpManager().convertXPToLevel(e.getBeforeXP()), BoxPlugin.instance.getXpManager().getLevel(p));
-            HashMap<Integer, ItemStack> toDrop = p.getInventory().addItem(Util.gigaCoinArray(toGive));
+            HashMap<Integer, ItemStack> toDrop = p.getInventory().addItem(Util.itemArray(toGive, Util::gigaCoin));
             toDrop.forEach((index, item) -> {
                 Item entity = (Item) p.getWorld().spawnEntity(p.getLocation(), EntityType.DROPPED_ITEM);
                 entity.setItemStack(item);
