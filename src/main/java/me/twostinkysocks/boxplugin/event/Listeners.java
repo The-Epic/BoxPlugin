@@ -409,7 +409,7 @@ public class Listeners implements Listener {
             }, 1L);
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerDeath(PlayerDeathEvent e) {
         // more than 10 below - 0xp
         // up to 10 below - 10xp
@@ -473,8 +473,12 @@ public class Listeners implements Listener {
         Util.dropPercent(e, percentChance);
         target.sendMessage(ChatColor.RED + "You lost" + (int)(100*percentChance) + "% of your items due to the level difference between you and the other player!");
         // skulls
-        e.getDrops().add(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
-        cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
+        if(xpdiff <= 2) {
+            e.getDrops().add(new ItemStack(Material.SKELETON_SKULL, BoxPlugin.instance.getPvpManager().getBounty(target)));
+            cause.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSkulls Claimed! &7You claimed " + BoxPlugin.instance.getPvpManager().getBounty(target) + " skulls from " + target.getName()));
+        } else {
+            cause.sendMessage(ChatColor.RED + "You earned no skulls due to having more than double your opponent's xp.");
+        }
         int xptoadd = Math.min((int)Math.min(50000,causexp*0.1), Math.max(0, BoxPlugin.instance.getXpManager().getLevel(target) * 100));
         BoxPlugin.instance.getXpManager().addXP(cause, xptoadd);
         Bukkit.getPluginManager().callEvent(new PlayerBoxXpUpdateEvent(cause, causexp, causexp + xptoadd));
