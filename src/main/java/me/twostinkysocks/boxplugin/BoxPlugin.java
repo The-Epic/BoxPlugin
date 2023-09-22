@@ -7,6 +7,8 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
 import com.github.stefvanschie.inventoryframework.pane.OutlinePane;
+import io.lumine.mythic.api.mobs.MythicMob;
+import io.lumine.mythic.bukkit.MythicBukkit;
 import me.twostinkysocks.boxplugin.compressor.Compressor;
 import me.twostinkysocks.boxplugin.customitems.CustomItemsMain;
 import me.twostinkysocks.boxplugin.event.Listeners;
@@ -190,7 +192,7 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
             new PlaceholderAPIExpansion().register();
         }
         Bukkit.getScheduler().runTaskTimer(this, () -> {
-            killsInHour = new HashMap<>();
+            killsInHour.clear();
         }, 20 * 60 * 60 * 2, 20 * 60 * 60 * 2);
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             for(World world : Bukkit.getWorlds()) {
@@ -201,15 +203,6 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                 }
             }
         }, 0, 100);
-        Bukkit.getScheduler().runTaskTimer(this, () -> {
-            for(World world : Bukkit.getWorlds()) {
-                for(Entity entity : world.getEntities()) {
-                    if(entity instanceof Slime) { // slime and magma
-                        entity.remove();
-                    }
-                }
-            }
-        }, 0, 20 * 60 * 60 * 2);
         for(World world : Bukkit.getWorlds()) {
             for(Entity entity : world.getEntities()) {
                 if(entity instanceof Slime) { // slime and magma
