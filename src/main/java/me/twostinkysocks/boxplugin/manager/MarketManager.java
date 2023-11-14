@@ -105,7 +105,7 @@ public class MarketManager {
 
         ItemStack rubies = Util.getSkull("http://textures.minecraft.net/texture/2530191500c2453624dd937ec125d44f0942cc2b664073e2a366b3fa67a0c897");
         SkullMeta rubiesMeta = (SkullMeta) rubies.getItemMeta();
-        rubiesMeta.setDisplayName(ChatColor.RED + "Exchange Rubies");
+        rubiesMeta.setDisplayName(ChatColor.RED + "Buy and Deposit Rubies");
         rubiesMeta.setLore(List.of(
                 "",
                 ChatColor.GRAY + "You have " + ChatColor.RED + getRubies(p) + " rubies",
@@ -342,7 +342,7 @@ public class MarketManager {
 
         ItemStack exchange = Util.getSkull("http://textures.minecraft.net/texture/2530191500c2453624dd937ec125d44f0942cc2b664073e2a366b3fa67a0c897");
         ItemMeta exchangeMeta = exchange.getItemMeta();
-        exchangeMeta.setDisplayName(ChatColor.GREEN + "Exchange Ruby items");
+        exchangeMeta.setDisplayName(ChatColor.GREEN + "Deposit Ruby items");
         exchangeMeta.setLore(List.of(
                 "",
                 ChatColor.GRAY + "Click to exchange all Rubies in your inventory",
