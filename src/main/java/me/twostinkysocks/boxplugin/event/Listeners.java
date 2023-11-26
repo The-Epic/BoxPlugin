@@ -1,6 +1,7 @@
 package me.twostinkysocks.boxplugin.event;
 
 import me.twostinkysocks.boxplugin.BoxPlugin;
+import me.twostinkysocks.boxplugin.customitems.items.impl.CageStaff;
 import me.twostinkysocks.boxplugin.manager.PerksManager;
 import me.twostinkysocks.boxplugin.manager.PerksManager.Perk;
 import me.twostinkysocks.boxplugin.perks.PerkXPBoost;
@@ -28,10 +29,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -181,6 +179,15 @@ public class Listeners implements Listener {
                 e.setCancelled(true);
                 fb.remove();
 
+            }
+        }
+    }
+
+    @EventHandler
+    public void onBlockBreakForCage(BlockBreakEvent e) {
+        for(HashSet<Location> locations : CageStaff.cageBlocks.values()) {
+            if(locations.contains(e.getBlock().getLocation())) {
+                e.setCancelled(true);
             }
         }
     }

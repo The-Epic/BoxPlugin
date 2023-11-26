@@ -266,7 +266,7 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                         }
                     }
                 }
-            } catch (java.io.IOException e) {
+            } catch (java.lang.Exception e) {
             }
         }, 0, 5 * 20 * 60);
     }

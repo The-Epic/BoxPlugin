@@ -412,7 +412,7 @@ public class MarketManager {
 
     public double randomizeMarketMultiplier() {
         double min = 0.8;
-        double max = 1.2;
+        double max = 1.1;
         double newMult = min + (new Random().nextDouble() * (max-min));
         newMult = ((int)(newMult * 100))/100.0;
         Bukkit.getWorld("Xanatos").getPersistentDataContainer().set(new NamespacedKey(BoxPlugin.instance, "MARKET_MULTIPLIER"), PersistentDataType.DOUBLE, newMult);

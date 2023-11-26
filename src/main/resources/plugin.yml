@@ -5,7 +5,7 @@ api-version: 1.19
 prefix: BoxPlugin
 authors: [ 2stinkysocks ]
 description: Custom plugin for word witero box server
-depend: [ExcellentCrates, MythicMobs]
+depend: [ExcellentCrates, MythicMobs, WorldGuard]
 softdepend: [LuckPerms, HolographicDisplays, PlaceholderAPI]
 commands:
   sus:
