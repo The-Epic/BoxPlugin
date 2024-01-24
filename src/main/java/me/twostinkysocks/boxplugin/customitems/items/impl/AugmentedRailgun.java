@@ -84,7 +84,7 @@ public class AugmentedRailgun extends CustomItem {
             } else {
                 particleTimers.put(instanceUUID, 0);
             }
-            if(particleTimers.get(instanceUUID) > 10) {
+            if(particleTimers.get(instanceUUID) > 15) {
                 particleTimers.remove(instanceUUID);
                 task.cancel();
             }
@@ -100,7 +100,7 @@ public class AugmentedRailgun extends CustomItem {
             } else {
                 ring1Timer.put(instanceUUID, 0);
             }
-            if(ring1Timer.get(instanceUUID) > 10) {
+            if(ring1Timer.get(instanceUUID) > 15) {
                 ring1Timer.remove(instanceUUID);
                 task.cancel();
             }
@@ -117,7 +117,7 @@ public class AugmentedRailgun extends CustomItem {
             } else {
                 ring2Timer.put(instanceUUID, 0);
             }
-            if(ring2Timer.get(instanceUUID) > 8) {
+            if(ring2Timer.get(instanceUUID) > 13) {
                 ring2Timer.remove(instanceUUID);
                 task.cancel();
             }
@@ -133,7 +133,7 @@ public class AugmentedRailgun extends CustomItem {
             } else {
                 ring3Timer.put(instanceUUID, 0);
             }
-            if(ring3Timer.get(instanceUUID) > 6) {
+            if(ring3Timer.get(instanceUUID) > 11) {
                 ring3Timer.remove(instanceUUID);
                 task.cancel();
             }
@@ -196,7 +196,7 @@ public class AugmentedRailgun extends CustomItem {
             if(laser.isStarted()) {
                 laser.stop();
             }
-        }, 10);
+        }, 15);
 
     }
 
@@ -235,7 +235,7 @@ public class AugmentedRailgun extends CustomItem {
                     d.damage(100, p);
                 }
             }
-        }, 10);
+        }, 15);
     }
 
     private List<Damageable> raycastEntities(List<Block> lineOfSight, List<Entity> nearbyEntities) {
