@@ -172,7 +172,7 @@ public class AugmentedRailgun extends CustomItem {
                 finalRingTimer.remove(instanceUUID);
                 task.cancel();
             }
-        }, 8, 1);
+        }, 13, 1);
         Bukkit.getScheduler().runTaskLater(BoxPlugin.instance, () -> {
             p.getWorld().playSound(startLoc, Sound.BLOCK_CONDUIT_DEACTIVATE, 0.5f, 2f);
             p.getWorld().playSound(startLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.4f, 1.7f);
