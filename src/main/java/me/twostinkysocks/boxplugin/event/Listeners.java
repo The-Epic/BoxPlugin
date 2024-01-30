@@ -103,7 +103,11 @@ public class Listeners implements Listener {
     @EventHandler
     public void onClick(PlayerInteractEvent e) {
         Player p = e.getPlayer();
-        if(e.getItem() != null && e.getItem().hasItemMeta() && e.getItem().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "nointeract"), PersistentDataType.INTEGER)) {
+        if(e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getItem() != null && e.getItem().hasItemMeta() && e.getItem().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "noplace"), PersistentDataType.INTEGER) && e.getItem().getItemMeta().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "noplace"), PersistentDataType.INTEGER) == 1) {
+            e.setCancelled(true);
+            return;
+        }
+        if(e.getItem() != null && e.getItem().hasItemMeta() && e.getItem().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(BoxPlugin.instance, "nointeract"), PersistentDataType.INTEGER) && e.getItem().getItemMeta().getPersistentDataContainer().get(new NamespacedKey(BoxPlugin.instance, "nointeract"), PersistentDataType.INTEGER) == 1) {
             e.setCancelled(true);
             return;
         }
