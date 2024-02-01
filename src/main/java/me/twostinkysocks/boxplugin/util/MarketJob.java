@@ -13,7 +13,7 @@ public class MarketJob implements Job {
         System.out.println("Updating market...");
         Bukkit.getScheduler().runTaskLater(BoxPlugin.instance, () -> { // no async bugs
             double newmult = BoxPlugin.instance.getMarketManager().randomizeMarketMultiplier();
-            Bukkit.broadcastMessage(ChatColor.GOLD + "" + "The market vaule has changed!");
+            Bukkit.broadcastMessage(ChatColor.GOLD + "The market vaule has changed!");
             if(newmult >= 1.05) {
                 Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "The market reached a new high! Your deposit is now worth " + newmult + "x!");
             }
