@@ -1,7 +1,6 @@
 plugins {
     id("java")
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("net.minecrell.plugin-yml.bukkit") version "0.5.3"
 }
 
 group = "me.twostinkysocks"
@@ -36,15 +35,14 @@ dependencies {
     compileOnly("fr.skytasul:beautyquests-core:0.20.0")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7")
     compileOnly("io.lumine:Mythic-Dist:5.3.5")
+    compileOnly("net.kyori:adventure-api:4.12.0")
+    compileOnly("net.kyori:adventure-platform-bukkit:4.2.0")
+    compileOnly("net.kyori:adventure-text-minimessage:4.12.0")
 
     implementation("org.quartz-scheduler:quartz:2.3.0")
     implementation("io.github.rapha149.signgui:signgui:2.2")
     implementation("com.github.stefvanschie.inventoryframework:IF:0.10.8")
     implementation(platform("com.intellectualsites.bom:bom-1.18.x:1.25"))
-
-    bukkitLibrary("net.kyori:adventure-api:4.12.0")
-    bukkitLibrary("net.kyori:adventure-platform-bukkit:4.2.0")
-    bukkitLibrary("net.kyori:adventure-text-minimessage:4.12.0")
 }
 
 tasks.shadowJar {
@@ -69,11 +67,4 @@ tasks.register("copyJar", Copy::class) {
 tasks.build {
     dependsOn(tasks.shadowJar)
     finalizedBy(tasks.getByName("copyJar"))
-}
-
-bukkit {
-    name = "BoxPlugin"
-    version = project.version as String
-    main = "me.twostinkysocks.BoxPlugin"
-    apiVersion = "1.19"
 }

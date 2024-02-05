@@ -4,9 +4,8 @@ import me.twostinkysocks.boxplugin.MessageConstants;
 import me.twostinkysocks.boxplugin.commands.api.SimpleCommandHandler;
 import me.twostinkysocks.boxplugin.manager.PerksManager;
 import me.twostinkysocks.boxplugin.perks.Upgradable;
-import me.twostinkysocks.boxplugin.util.Util;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -18,10 +17,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class SetPerkUpgradeLevelCommand extends SimpleCommandHandler {
-    public SetPerkUpgradeLevelCommand() {
-        super("aetherconquest.command.setperkupgradelvl");
-        addExtraPermission("boxplugin.manageperks");
+public class GetPerkUpgradeLevelCommand extends SimpleCommandHandler {
+    public GetPerkUpgradeLevelCommand() {
+        super("aetherconquest.command.getperkupgradelvl");
         addExtraPermission("manageperks");
     }
 
@@ -32,26 +30,35 @@ public class SetPerkUpgradeLevelCommand extends SimpleCommandHandler {
             return true;
         }
 
-        if (!hasPermission(player)) {
+        if (!hasPermission(sender)) {
             player.sendMessage(ChatColor.RED + "You don't have permission!");
             return true;
         }
 
-        if (args.length < 3 || Bukkit.getPlayer(args[0]) == null || PerksManager.Perk.getByName(
-                args[1]) == null || !(PerksManager.Perk.getByName(
-                args[1]).instance instanceof Upgradable) || !Util.isInteger(args[2])) {
-            player.sendMessage(ChatColor.RED + "Usage: /setperkupgradelevel <player> <upgradeableperk> <level>");
+        if (args.length < 2) {
+            player.sendMessage(ChatColor.RED + "Usage: /getperkupgradelevel <player> <upgradeableperk>");
             return true;
         }
 
-        Upgradable up = (Upgradable) PerksManager.Perk.getByName(args[1]).instance;
         Player toSearch = Bukkit.getPlayer(args[0]);
-        int num = Integer.parseInt(args[2]);
-        up.setLevel(toSearch, num);
-        player.sendMessage("Set " + toSearch.getName() + "'s level for " + PerksManager.Perk.getByName(
-                args[1]).instance.getKey() + " to " + up.getLevel(toSearch));
-        toSearch.sendMessage(ChatColor.AQUA + "Your perk level for " + PerksManager.Perk.getByName(
-                args[1]).instance.getKey() + " was set to " + up.getLevel(toSearch) + " by an admin.");
+        if (toSearch == null) {
+            player.sendMessage(ChatColor.RED + "Player not found!");
+            return true;
+        }
+
+        PerksManager.Perk perk = PerksManager.Perk.getByName(args[1]);
+        if (perk == null) {
+            player.sendMessage(ChatColor.RED + "Perk not found!");
+            return true;
+        }
+
+        if (!(perk.instance instanceof Upgradable up)) {
+            player.sendMessage(ChatColor.RED + "Perk is not upgradeable!");
+            return true;
+        }
+
+        player.sendMessage(
+                toSearch.getName() + "'s level for " + perk.instance.getKey() + ": " + up.getLevel(toSearch));
         return true;
     }
 
@@ -64,7 +71,7 @@ public class SetPerkUpgradeLevelCommand extends SimpleCommandHandler {
             );
         } else if (args.length == 2) {
             return StringUtil.copyPartialMatches(args[1],
-                    Arrays.stream(PerksManager.Perk.values()).filter(perk -> perk.instance instanceof Upgradable)
+                    Arrays.stream(PerksManager.Perk.values()).filter(per -> per.instance instanceof Upgradable)
                             .map(per -> per.instance.getKey()).collect(Collectors.toList()), new ArrayList<>()
             );
         }

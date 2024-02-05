@@ -8,7 +8,12 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class BoxXpCommand extends SimpleCommandHandler {
 
@@ -19,14 +24,14 @@ public class BoxXpCommand extends SimpleCommandHandler {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if(args.length < 3) {
+        if (args.length < 3) {
             sender.sendMessage(ChatColor.RED + "Usage: /aetherconquest boxxp <get|set|add> [player] [amount]");
             return true;
         }
 
         Player target = Bukkit.getPlayer(args[1]);
 
-        if(target == null) {
+        if (target == null) {
             sender.sendMessage(ChatColor.RED + "Player " + args[1] + " not found");
             return true;
         }
@@ -52,11 +57,24 @@ public class BoxXpCommand extends SimpleCommandHandler {
         return true;
     }
 
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length == 1) {
+            return StringUtil.copyPartialMatches(args[0], List.of("get", "set", "add"), new ArrayList<>());
+        } else if (args.length == 2) {
+            return StringUtil.copyPartialMatches(args[1],
+                    Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(
+                            Collectors.toList()), new ArrayList<>()
+            );
+        }
+        return super.onTabComplete(sender, command, alias, args);
+    }
+
     private void addOrSet(Player player, int amount, boolean add) {
         int existingXp = this.getPlugin().getXpManager().getXP(player);
         int newTotal;
 
-        if(add) {
+        if (add) {
             newTotal = existingXp + amount;
             player.sendMessage(ChatColor.GREEN + "Added " + amount + " xp to " + player.getName());
         } else {

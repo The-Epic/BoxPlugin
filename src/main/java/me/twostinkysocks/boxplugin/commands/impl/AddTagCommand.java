@@ -12,9 +12,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class AddTagCommand extends SimpleCommandHandler {
@@ -67,5 +69,13 @@ public class AddTagCommand extends SimpleCommandHandler {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if(args.length == 1) {
+            return StringUtil.copyPartialMatches(args[0], List.of("int", "string"), new ArrayList<>());
+        }
+        return super.onTabComplete(sender, command, alias, args);
     }
 }

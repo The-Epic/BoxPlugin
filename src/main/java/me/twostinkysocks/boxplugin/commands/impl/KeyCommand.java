@@ -6,8 +6,12 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import su.nightexpress.excellentcrates.key.KeyManager;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class KeyCommand extends SimpleCommandHandler {
 
@@ -70,5 +74,26 @@ public class KeyCommand extends SimpleCommandHandler {
         }
 
         return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if(args.length == 1) {
+            ArrayList<String> keys = new ArrayList<>();
+            if(sender.hasPermission("boxplugin.key.common")) {
+                keys.add("common");
+            }
+            if(sender.hasPermission("boxplugin.key.rare")) {
+                keys.add("rare");
+            }
+            if(sender.hasPermission("boxplugin.key.epic")) {
+                keys.add("epic");
+            }
+            if(sender.hasPermission("boxplugin.key.legendary")) {
+                keys.add("legendary");
+            }
+            return StringUtil.copyPartialMatches(args[0], keys, new ArrayList<>());
+        }
+        return super.onTabComplete(sender, command, alias, args);
     }
 }
