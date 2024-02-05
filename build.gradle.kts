@@ -41,6 +41,10 @@ dependencies {
     implementation("io.github.rapha149.signgui:signgui:2.2")
     implementation("com.github.stefvanschie.inventoryframework:IF:0.10.8")
     implementation(platform("com.intellectualsites.bom:bom-1.18.x:1.25"))
+
+    bukkitLibrary("net.kyori:adventure-api:4.12.0")
+    bukkitLibrary("net.kyori:adventure-platform-bukkit:4.2.0")
+    bukkitLibrary("net.kyori:adventure-text-minimessage:4.12.0")
 }
 
 tasks.shadowJar {
@@ -51,9 +55,6 @@ tasks.shadowJar {
     // relocations
     relocate("com.github.stefvanschie.inventoryframework", "me.twostinkysocks.libs.inventoryframework")
 }
-
-
-
 
 tasks.register("copyJar", Copy::class) {
     doNotTrackState("")

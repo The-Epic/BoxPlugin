@@ -1,1 +1,1 @@
-//rootProject.name = 'BoxPlugin'
+rootProject.name = "BoxPlugin"

@@ -333,6 +333,10 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
 //        return entityInteract;
 //    }
 
+    public void resetPlacedBlocks() {
+        placedBlocks.clear();
+    }
+
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
