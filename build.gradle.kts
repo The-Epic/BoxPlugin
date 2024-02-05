@@ -23,8 +23,6 @@ repositories {
 
 dependencies {
     compileOnly("org.spigotmc:spigot:1.19.1-R0.1-SNAPSHOT")
-    implementation("sh.miles:Pineapple:1.0.0-SNAPSHOT")
-
     compileOnly("com.comphenix.protocol:ProtocolLib:4.7.0")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.1.0-SNAPSHOT")
     compileOnly("net.luckperms:api:5.4")
