@@ -79,7 +79,7 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
     public HashMap<Material, Integer> blockExperience;
     public HashMap<EntityType, Integer> entityExperience;
     public ArrayList<Location> placedBlocks;
-    public HashMap<UUID, Boolean> debugEnabled;
+    private final List<UUID> debugEnabled = new ArrayList<>();
 
     private ScoreboardManager scoreboardManager;
 
@@ -128,7 +128,6 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
     public void load() {
         blockExperience = new HashMap<>();
         entityExperience = new HashMap<>();
-        debugEnabled = new HashMap<>();
         if(!this.getDataFolder().exists()) {
             this.getDataFolder().mkdir();
         }
@@ -639,18 +638,18 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
                     return true;
                 }
             } else if(label.equals("debug")) {
-                if(debugEnabled.containsKey(p.getUniqueId())) {
-                    if(debugEnabled.get(p.getUniqueId())) {
-                        debugEnabled.put(p.getUniqueId(), false);
-                        p.sendMessage(ChatColor.RED + "Toggled debug off");
-                    } else {
-                        debugEnabled.put(p.getUniqueId(), true);
-                        p.sendMessage(ChatColor.RED + "Toggled debug on");
-                    }
-                } else {
-                    debugEnabled.put(p.getUniqueId(), true);
-                    p.sendMessage(ChatColor.RED + "Toggled debug on");
-                }
+//                if(debugEnabled.containsKey(p.getUniqueId())) {
+//                    if(debugEnabled.get(p.getUniqueId())) {
+//                        debugEnabled.put(p.getUniqueId(), false);
+//                        p.sendMessage(ChatColor.RED + "Toggled debug off");
+//                    } else {
+//                        debugEnabled.put(p.getUniqueId(), true);
+//                        p.sendMessage(ChatColor.RED + "Toggled debug on");
+//                    }
+//                } else {
+//                    debugEnabled.put(p.getUniqueId(), true);
+//                    p.sendMessage(ChatColor.RED + "Toggled debug on");
+//                }
             } else if(label.equals("getperkupgradelevel")) {
                 // /getperkupgradelevel <player> <upgradeableperk>
                 if(!p.hasPermission("manageperks")) {
@@ -761,5 +760,18 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
             }
         }
         return List.of();
+    }
+
+    public void enableDebug(Player player) {
+        this.debugEnabled.add(player.getUniqueId());
+    }
+
+    public void disableDebug(Player player) {
+        this.debugEnabled.remove(player.getUniqueId());
+    }
+
+    public boolean isDebugEnabled(Player player) {
+        UUID uuid = this.debugEnabled.stream().filter(id -> id.equals(player.getUniqueId())).findFirst().orElse(null);
+        return uuid != null;
     }
 }

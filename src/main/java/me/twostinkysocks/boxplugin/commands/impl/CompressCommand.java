@@ -21,7 +21,7 @@ public class CompressCommand extends SimpleCommandHandler {
             return true;
         }
 
-        if(!player.hasPermission("boxplugin.compress")) {
+        if(!hasPermission(player)) {
             player.sendMessage(ChatColor.RED + "You don't have permission!");
             return true;
         }

@@ -22,6 +22,11 @@ public class ResetPerksCommand extends SimpleCommandHandler {
             return true;
         }
 
+        if(!hasPermission(player)) {
+            player.sendMessage(ChatColor.RED + "You don't have permission!");
+            return true;
+        }
+
         if(args.length == 0) {
             getPlugin().getPerksManager().resetPerks(player);
             player.sendMessage(ChatColor.GREEN + "Reset your perks to default!");

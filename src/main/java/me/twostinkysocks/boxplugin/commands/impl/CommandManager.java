@@ -23,18 +23,11 @@ public class CommandManager extends ArgumentCommandHandler {
 
         BoxPlugin plugin = getPlugin();
 
-        // TODO add enforced permcheck for commands that bypass subcommands
-        OpenBankComand openBankCommand = new OpenBankComand();
-        plugin.getCommand("openbank").setExecutor(openBankCommand);
-        addArgumentExecutor("openbank", openBankCommand);
+        plugin.getCommand("openbank").setExecutor(new OpenBankCommand());
 
-        OpenPerkGuiCommand openPerkGuiCommand = new OpenPerkGuiCommand();
-        plugin.getCommand("openperkgui").setExecutor(openPerkGuiCommand);
-        addArgumentExecutor("openperkgui", openPerkGuiCommand);
+        plugin.getCommand("openperkgui").setExecutor(new OpenPerkGuiCommand());
 
-        GetOwnedPerksCommand getOwnedPerksCommand = new GetOwnedPerksCommand();
-        plugin.getCommand("getownedperks").setExecutor(getOwnedPerksCommand);
-        addArgumentExecutor("getownedperks", getOwnedPerksCommand);
+        plugin.getCommand("getownedperks").setExecutor(new GetOwnedPerksCommand());
 
         plugin.getCommand("keys").setExecutor(new KeyCommand());
 
@@ -42,8 +35,19 @@ public class CommandManager extends ArgumentCommandHandler {
 
         plugin.getCommand("compress").setExecutor(new CompressCommand());
 
-        addArgumentExecutor("tree", new TreeCommand());
         plugin.getCommand("tree").setExecutor(new TreeCommand());
+
+        plugin.getCommand("clearstreak").setExecutor(new ClearStreakCommand());
+
+        plugin.getCommand("debug").setExecutor(new DebugCommand());
+
+        plugin.getCommand("setmarketmultiplier").setExecutor(new SetMarketMultiplierCommand());
+
+        plugin.getCommand("setperkupgradelevel").setExecutor(new SetPerkUpgradeLevelCommand());
+
+        plugin.getCommand("addtag").setExecutor(new AddTagCommand());
+
+        plugin.getCommand("claimlegacyrewards").setExecutor(new ClaimLegacyRewardsCommand());
     }
 
 }

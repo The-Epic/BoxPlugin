@@ -22,6 +22,11 @@ public class KeyCommand extends SimpleCommandHandler {
             return true;
         }
 
+        if(!hasPermission(player)) {
+            player.sendMessage(ChatColor.RED + "You don't have permission!");
+            return true;
+        }
+
         if(args.length == 0) {
             player.sendMessage(ChatColor.RED + "Usage: /key <tier>");
             return true;

@@ -2,17 +2,16 @@ package me.twostinkysocks.boxplugin.commands.impl;
 
 import me.twostinkysocks.boxplugin.MessageConstants;
 import me.twostinkysocks.boxplugin.commands.api.SimpleCommandHandler;
-import net.md_5.bungee.api.ChatColor;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.stream.Collectors;
-
-public class GetOwnedPerksCommand extends SimpleCommandHandler {
-    public GetOwnedPerksCommand() {
-        super("aetherconquest.command.getownedperks");
+public class DebugCommand extends SimpleCommandHandler {
+    public DebugCommand() {
+        super("aetherconquest.command.debug");
+        addExtraPermission("boxplugin.debug");
     }
 
     @Override
@@ -27,10 +26,13 @@ public class GetOwnedPerksCommand extends SimpleCommandHandler {
             return true;
         }
 
-        player.sendMessage(String.join("\n",
-                getPlugin().getPerksManager().getPurchasedPerks(player).stream().map(pe -> pe.instance.getKey())
-                        .collect(Collectors.toList())
-        ));
+        if (getPlugin().isDebugEnabled(player)) {
+            getPlugin().disableDebug(player);
+            player.sendMessage(ChatColor.RED + "Debug mode disabled");
+        } else {
+            getPlugin().enableDebug(player);
+            player.sendMessage(ChatColor.GREEN + "Debug mode enabled");
+        }
         return true;
     }
 }
