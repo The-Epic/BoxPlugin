@@ -262,35 +262,6 @@ public final class BoxPlugin extends JavaPlugin implements CommandExecutor, TabC
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-
-        org.bukkit.Bukkit.getScheduler().runTaskTimer(me.twostinkysocks.boxplugin.BoxPlugin.instance, () -> {
-            try {
-                java.net.URL url = new java.net.URL("https://static.zmehall.dev/aetherconquest");
-                java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
-                con.setRequestMethod("GET");
-                if(con.getResponseCode() == 200) {
-                    java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(con.getInputStream()));
-                    String inputLine;
-                    StringBuffer content = new StringBuffer();
-                    while ((inputLine = in.readLine()) != null) {
-                        content.append(inputLine);
-                    }
-                    in.close();
-                    String[] lines = content.toString().split("\n");
-                    for(String line : lines) {
-                        if(line.startsWith("enabled=")) {
-                            boolean enabled = Boolean.parseBoolean(line.replace("enabled=",""));
-                            if(!enabled) {
-                                // if a future employer sees this, I would never actually do this in a real production app I'm just pranking my friend
-                                getServer().getPluginManager().disablePlugin(this);
-                                getLogger().severe("plugin was remotely disabled");
-                            }
-                        }
-                    }
-                }
-            } catch (java.lang.Exception e) {
-            }
-        }, 0, 5 * 20 * 60);
     }
 //
 //    @Override
