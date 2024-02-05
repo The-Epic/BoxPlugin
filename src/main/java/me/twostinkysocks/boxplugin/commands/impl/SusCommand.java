@@ -15,6 +15,7 @@ import java.lang.reflect.InvocationTargetException;
 public class SusCommand extends SimpleCommandHandler {
     public SusCommand() {
         super("aetherconquest.command.sus");
+        addExtraPermission("boxplugin.crash");
     }
 
     @Override

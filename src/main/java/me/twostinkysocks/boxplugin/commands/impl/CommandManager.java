@@ -22,15 +22,28 @@ public class CommandManager extends ArgumentCommandHandler {
         addArgumentExecutor("sus", new SusCommand());
 
         BoxPlugin plugin = getPlugin();
-        //OpenBankCommand openBankCommand = new OpenBankCommand();
-        //plugin.getCommand("openbank", openBankCommand);
-        //addArgumentExecutor("openbank", openBankCommand);
-        //OpenPerkGuiCommand openPerkGuiCommand = new OpenPerkGuiCommand();
-        //plugin.getCommand("openperkgui", openPerkGuiCommand);
-        //addArgumentExecutor("openperkgui", openPerkGuiCommand);
-        //GetOwnedPerksCommand getOwnedPerksCommand = new GetOwnedPerksCommand();
-        //plugin.getCommand("getownedperks", getOwnedPerksCommand);
-        //addArgumentExecutor("getownedperks", getOwnedPerksCommand);
+
+        // TODO add enforced permcheck for commands that bypass subcommands
+        OpenBankComand openBankCommand = new OpenBankComand();
+        plugin.getCommand("openbank").setExecutor(openBankCommand);
+        addArgumentExecutor("openbank", openBankCommand);
+
+        OpenPerkGuiCommand openPerkGuiCommand = new OpenPerkGuiCommand();
+        plugin.getCommand("openperkgui").setExecutor(openPerkGuiCommand);
+        addArgumentExecutor("openperkgui", openPerkGuiCommand);
+
+        GetOwnedPerksCommand getOwnedPerksCommand = new GetOwnedPerksCommand();
+        plugin.getCommand("getownedperks").setExecutor(getOwnedPerksCommand);
+        addArgumentExecutor("getownedperks", getOwnedPerksCommand);
+
+        plugin.getCommand("keys").setExecutor(new KeyCommand());
+
+        plugin.getCommand("resetperks").setExecutor(new ResetPerksCommand());
+
+        plugin.getCommand("compress").setExecutor(new CompressCommand());
+
+        addArgumentExecutor("tree", new TreeCommand());
+        plugin.getCommand("tree").setExecutor(new TreeCommand());
     }
 
 }

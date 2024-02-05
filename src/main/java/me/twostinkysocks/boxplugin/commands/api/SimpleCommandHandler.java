@@ -5,11 +5,13 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public abstract class SimpleCommandHandler implements TabExecutor {
     private final String permission;
+    private final List<String> extraPermissions = new ArrayList<>();
     private final BoxPlugin plugin = BoxPlugin.instance;
 
     public SimpleCommandHandler(String permission) {
@@ -27,6 +29,18 @@ public abstract class SimpleCommandHandler implements TabExecutor {
 
     public BoxPlugin getPlugin() {
         return plugin;
+    }
+
+    public void addExtraPermission(String permission) {
+        extraPermissions.add(permission);
+    }
+
+    public List<String> getExtraPermissions() {
+        return new ArrayList<>(extraPermissions);
+    }
+
+    public boolean hasPermission(CommandSender sender) {
+        return sender.hasPermission(permission) || extraPermissions.stream().anyMatch(sender::hasPermission);
     }
 
 }

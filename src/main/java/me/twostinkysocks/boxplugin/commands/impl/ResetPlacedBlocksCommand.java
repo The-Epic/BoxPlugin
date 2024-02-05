@@ -10,6 +10,7 @@ public class ResetPlacedBlocksCommand extends SimpleCommandHandler {
 
     public ResetPlacedBlocksCommand() {
         super("aetherconquest.command.resetplacedblocks");
+        addExtraPermission("boxplugin.resetplacedblocks");
     }
 
     @Override

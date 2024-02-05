@@ -14,6 +14,7 @@ public class BoxXpCommand extends SimpleCommandHandler {
 
     public BoxXpCommand() {
         super("aetherconquest.command.box-xp");
+        addExtraPermission("boxplugin.xpcommands");
     }
 
     @Override

@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 public class ReloadCommand extends SimpleCommandHandler {
     public ReloadCommand() {
         super("aetherconquest.command.reload");
+        addExtraPermission("boxplugin.reload");
     }
 
     @Override

@@ -28,7 +28,7 @@ public class ArgumentCommandHandler extends SimpleCommandHandler {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
-        if (!sender.hasPermission(getPermission())) {
+        if (!hasAnyPermission(sender)) {
             sender.sendMessage(noPermissionMessage.get());
             return true;
         }
@@ -45,6 +45,11 @@ public class ArgumentCommandHandler extends SimpleCommandHandler {
 
             if (executor == null) {
                 sendUsage(sender, args[0]);
+                return true;
+            }
+
+            if (!hasAnySubcommandPermission(sender, executor)) {
+                sender.sendMessage(noPermissionMessage.get());
                 return true;
             }
 
@@ -86,9 +91,32 @@ public class ArgumentCommandHandler extends SimpleCommandHandler {
     private List<String> getVisibleSubcommands(CommandSender sender) {
         List<String> subcommands = new ArrayList<>();
         for (Entry<String, SimpleCommandHandler> entry : this.subcommands.entrySet()) {
-            if (sender.hasPermission(entry.getValue().getPermission()))
+            if (hasAnySubcommandPermission(sender, entry.getValue()))
                 subcommands.add(entry.getKey());
         }
         return subcommands;
+    }
+
+    private boolean hasAnyPermission(CommandSender sender) {
+        if (sender.hasPermission(getPermission())) {
+            return true;
+        }
+        for (String permission : getExtraPermissions()) {
+            if (sender.hasPermission(permission))
+                return true;
+        }
+        return false;
+    }
+
+    private boolean hasAnySubcommandPermission(CommandSender sender, SimpleCommandHandler executor) {
+        if (sender.hasPermission(executor.getPermission())) {
+            return true;
+        }
+
+        for (String permission : executor.getExtraPermissions()) {
+            if (sender.hasPermission(permission))
+                return true;
+        }
+        return false;
     }
 }
