@@ -49,7 +49,6 @@ tasks.shadowJar {
     archiveFileName = "BoxPlugins-${project.version}.jar"
 
     // relocations
-    relocate("sh.miles.pineapple", "me.twostinkysocks.libs.pineapple")
     relocate("com.github.stefvanschie.inventoryframework", "me.twostinkysocks.libs.inventoryframework")
 }
 
